@@ -37,7 +37,6 @@ eB1 equ 16
 eB2 equ 17
 eB3 equ 18
 eB4 equ 19
-eEmemo equ 20
 eButton equ 21
 eB5 equ 22
 MAXSIZE equ 260
@@ -112,9 +111,6 @@ FilterString	db "Shpion reports",0,"*.shr",0
 sLog db ".shr",0
 Button_count DWORD 0
 
-sWarning	db "--- Nothing's wrong ---",0
-sJustBox	db "It's just a messagebox.",0
-
 sCLeft	db "SendMessage((HWND)",0
 sCRight	db ",WM_USER,,);",0
 
@@ -141,7 +137,7 @@ hB4 HWND ?
 hB5 HWND ?
 hS0 HWND ?
 hS5 HWND ?
-hEmemo HWND ?
+
 hInstance HINSTANCE ?
 CommandLine LPSTR ?
 buffer db 512 dup(?)
@@ -162,7 +158,7 @@ fqTemp QWORD ?
 .code
 start:
 	invoke GetModuleHandle, NULL
-	mov    hInstance,eax
+	mov hInstance,eax
 	invoke GetCommandLine
 	invoke WinMain, hInstance,NULL,CommandLine, SW_SHOWDEFAULT
 	invoke ExitProcess,eax
@@ -191,13 +187,13 @@ WinMain proc hInst:HINSTANCE,hPrevInst:HINSTANCE,CmdLine:LPSTR,CmdShow:DWORD
 	invoke RegisterClassEx, addr wc
 	invoke CreateWindowEx,WS_EX_LEFT, ADDR ClassName, ADDR AppName,\
 		WS_OVERLAPPEDWINDOW - WS_MAXIMIZEBOX,CW_USEDEFAULT,\
-		CW_USEDEFAULT,206,220,NULL,NULL,\
+		CW_USEDEFAULT,450, 220,NULL,NULL,\
 		hInst,NULL
 	mov hwnd,eax
 	invoke ShowWindow, hwnd,SW_SHOWNORMAL
 	invoke UpdateWindow, hwnd
 	.WHILE TRUE
-		invoke GetMessage, ADDR msg,NULL,0,0
+		invoke GetMessage, ADDR msg, NULL, 0, 0
 		.BREAK .IF (!eax)
 		invoke TranslateMessage, ADDR msg
 		invoke DispatchMessage, ADDR msg
@@ -237,8 +233,8 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 		mov dWnd,eax
 		invoke GetWindowRect,dWnd, ADDR rect
 		mov eax,rect.right
-		sub eax,224
-		invoke SetWindowPos, hWnd, HWND_TOPMOST, eax, 45, 0, 0, SWP_NOSIZE ; 3 
+		sub eax, 500
+		invoke SetWindowPos, hWnd, HWND_TOPMOST, eax, 45, 0, 0, SWP_NOSIZE
 
 		invoke CreateWindowEx,NULL, ADDR StaticClassName, ADDR sTotal,\
 			WS_CHILD or WS_VISIBLE,\
@@ -249,12 +245,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 			WS_CHILD or WS_VISIBLE,\
 			7, 82, 15, 20, hWnd, eS5, hInstance, NULL
 		mov hS5,eax 
-
-		invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR EditClassName, ADDR sNone,\
-			WS_CHILD or WS_VISIBLE or ES_LEFT or ES_MULTILINE or\
-			ES_AUTOHSCROLL,\
-			102, 0, 47, 179, hWnd, eEmemo, hInstance, NULL
-		mov hEmemo,eax 
 
 		invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR EditClassName, ADDR sA,\
 			WS_CHILD or WS_VISIBLE or ES_LEFT or\
@@ -365,10 +355,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 		.if wParam=='B';66
 			mov eax, Button_count
 			sub Button_count, eax
-			ret
-		.endif
-		.if wParam=='S';83
-			invoke MessageBox,0, ADDR sJustBox, ADDR sWarning,0
 			ret
 		.endif
 		.if wParam=='Q';81
@@ -786,13 +772,8 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 				mov A9,eax
 			.endif
 		.endif
-	.ELSEIF uMsg==WM_SIZE
-		invoke GetClientRect,hWnd, ADDR rect
-		mov eax,rect.right
-		sub eax,102
-		invoke MoveWindow, hEmemo, 102 , 0, eax, 167, TRUE
 	.ELSEIF uMsg==WM_COMMAND
-		mov eax,wParam	  
+		mov eax,wParam
 		.IF ax==eB
 			.IF A0==0
 				mov eax,A1
@@ -1045,29 +1026,16 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 			invoke szCatStr,addr text,addr sProfileResults
 			invoke szCatStr,addr text,addr sEOL
 			invoke szCatStr,addr text,addr sEOL
-
+			
 			invoke szCatStr, ADDR text, ADDR s0
 			invoke szCatStr, ADDR text, ADDR sSp
 			invoke GetWindowText,hE0, ADDR buffer,512
 			invoke szCatStr, ADDR text, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR sSp
-			invoke memfill, ADDR buffer,512,32
-			invoke SendMessage,hEmemo,EM_LINELENGTH,0,0
-			dec eax
-			mov buffer[eax],0
-			invoke SendMessage,hEmemo,EM_GETLINE,0, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR sEOL
+			
 			invoke szCatStr, ADDR text, ADDR s1
 			invoke szCatStr, ADDR text, ADDR sSp
 			invoke GetWindowText,hE1, ADDR buffer,512
-			invoke szCatStr, ADDR text, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR sSp
-			invoke memfill, ADDR buffer,512,32
-			invoke SendMessage,hEmemo,EM_LINELENGTH,1,0
-			dec eax
-			mov buffer[eax],0
-			invoke SendMessage,hEmemo,EM_GETLINE,1, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR sEOL
 
@@ -1075,25 +1043,11 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 			invoke szCatStr, ADDR text, ADDR sSp
 			invoke GetWindowText,hE2, ADDR buffer,512
 			invoke szCatStr, ADDR text, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR sSp
-			invoke memfill, ADDR buffer,512,32
-			invoke SendMessage,hEmemo,EM_LINELENGTH,2,0
-			dec eax
-			mov buffer[eax],0
-			invoke SendMessage,hEmemo,EM_GETLINE,2, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR sEOL
 
 			invoke szCatStr, ADDR text, ADDR s3
 			invoke szCatStr, ADDR text, ADDR sSp
 			invoke GetWindowText,hE3, ADDR buffer,512
-			invoke szCatStr, ADDR text, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR sSp
-			invoke memfill, ADDR buffer,512,32
-			invoke SendMessage,hEmemo,EM_LINELENGTH,3,0
-			dec eax
-			mov buffer[eax],0
-			invoke SendMessage,hEmemo,EM_GETLINE,3, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR sEOL
 
@@ -1101,25 +1055,11 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 			invoke szCatStr, ADDR text, ADDR sSp
 			invoke GetWindowText,hE4, ADDR buffer,512
 			invoke szCatStr, ADDR text, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR sSp
-			invoke memfill, ADDR buffer,512,32
-			invoke SendMessage,hEmemo,EM_LINELENGTH,4,0
-			dec eax
-			mov buffer[eax],0
-			invoke SendMessage,hEmemo,EM_GETLINE,4, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR sEOL
 
 			invoke szCatStr, ADDR text, ADDR s5
 			invoke szCatStr, ADDR text, ADDR sSp
 			invoke GetWindowText,hE5, ADDR buffer,512
-			invoke szCatStr, ADDR text, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR sSp
-			invoke memfill, ADDR buffer,512,32
-			invoke SendMessage,hEmemo,EM_LINELENGTH,5,0
-			dec eax
-			mov buffer[eax],0
-			invoke SendMessage,hEmemo,EM_GETLINE,5, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR sEOL
 
@@ -1127,25 +1067,11 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 			invoke szCatStr, ADDR text, ADDR sSp
 			invoke GetWindowText,hE6, ADDR buffer,512
 			invoke szCatStr, ADDR text, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR sSp
-			invoke memfill, ADDR buffer,512,32
-			invoke SendMessage,hEmemo,EM_LINELENGTH,6,0
-			dec eax
-			mov buffer[eax],0
-			invoke SendMessage,hEmemo,EM_GETLINE,6, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR sEOL
 
 			invoke szCatStr, ADDR text, ADDR s7
 			invoke szCatStr, ADDR text, ADDR sSp
 			invoke GetWindowText,hE7, ADDR buffer,512
-			invoke szCatStr, ADDR text, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR sSp
-			invoke memfill, ADDR buffer,512,32
-			invoke SendMessage,hEmemo,EM_LINELENGTH,7,0
-			dec eax
-			mov buffer[eax],0
-			invoke SendMessage,hEmemo,EM_GETLINE,7, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR sEOL
 
@@ -1153,37 +1079,23 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 			invoke szCatStr, ADDR text, ADDR sSp
 			invoke GetWindowText,hE8, ADDR buffer,512
 			invoke szCatStr, ADDR text, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR sSp
-			invoke memfill, ADDR buffer,512,32
-			invoke SendMessage,hEmemo,EM_LINELENGTH,8,0
-			dec eax
-			mov buffer[eax],0
-			invoke SendMessage,hEmemo,EM_GETLINE,8, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR sEOL
 
 			invoke szCatStr, ADDR text, ADDR s9
 			invoke szCatStr, ADDR text, ADDR sSp
 			invoke GetWindowText,hE9, ADDR buffer,512
 			invoke szCatStr, ADDR text, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR sSp
-			invoke memfill, ADDR buffer,512,32
-			invoke SendMessage,hEmemo,EM_LINELENGTH,9,0
-			dec eax
-			mov buffer[eax],0
-			invoke SendMessage,hEmemo,EM_GETLINE,9, ADDR buffer
-			invoke szCatStr, ADDR text, ADDR buffer
 			invoke szCatStr, ADDR text, ADDR sEOL
 
 			invoke RtlZeroMemory,addr ofn,sizeof ofn
 			mov ofn.lStructSize,SIZEOF ofn
 			push hWnd
-			pop  ofn.hWndOwner
+			pop ofn.hWndOwner
 			push hInstance
-			pop  ofn.hInstance
-			mov  ofn.lpstrFilter, OFFSET FilterString
-			mov  ofn.lpstrFile, OFFSET buffer
-			mov  ofn.nMaxFile,MAXSIZE
+			pop ofn.hInstance
+			mov ofn.lpstrFilter, OFFSET FilterString
+			mov ofn.lpstrFile, OFFSET buffer
+			mov ofn.nMaxFile,MAXSIZE
 			mov buffer[0],0
 			mov ofn.Flags,OFN_LONGNAMES or OFN_EXPLORER or OFN_HIDEREADONLY
 			invoke GetSaveFileName, ADDR ofn
