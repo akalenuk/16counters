@@ -52,9 +52,15 @@ It returns not 0 if a `button` was pressed and then resets its state. This way y
 *GUI*
 
 `[0]` button nullifies all counters.
+
 `[N]` button updates counters when `Realtime print` is off.
+
 `[W]` button copies handler number to clipboard.
+
 `[C]` button copies C SendMessage template to clipboard.
+
 `[F]` button saves counters to a file.
+
 `[v] Realtime print` is a checkbox which sets automatic counter updates on and off. It is convenient to have it always `on`, but is also affects perforance, so this is optional.
+
 `[button]` button counts when you press it so you can access this counter via messaging then.
