@@ -31,11 +31,10 @@ eE9 equ 10
 eE10 equ 11
 eS0 equ 12
 eS5 equ 13
-eB equ 14
-eB0 equ 15
-eB1 equ 16
-eBW equ 17
-eBF equ 18
+eB0 equ 100
+eBN equ 101
+eBW equ 102
+eBF equ 103
 eRealtimePrint equ 19
 eButton equ 21
 eBC equ 22
@@ -73,7 +72,7 @@ s100 db "100",0
 sA db "0",0
 sB db "%",0
 sB0 db "0",0
-sB1 db "N",0
+sBN db "N",0
 sBW db "W",0
 sBF db "F",0
 sRealtimePrint db "Realtime print",0
@@ -83,7 +82,9 @@ s03 db "0-3", 0
 s47 db "4-7", 0
 s8B db "8-B", 0
 sCF db "C-F", 0
-
+sZero db "0", 0
+sColon db ":", 0
+sSpace db " ", 0
 
 cT DWORD 0
 T0 DWORD 0
@@ -137,7 +138,7 @@ hE10 HWND ?
 hB HWND ?
 hButton HWND ?
 hB0 HWND ?
-hB1 HWND ?
+hBN HWND ?
 hBW HWND ?
 hBF HWND ?
 hRealtimePrint HWND ?
@@ -285,25 +286,30 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         2, 2, 21, 21, hWnd, eB0, hInstance, NULL
                 mov hB0, eax
 
+                invoke CreateWindowEx, NULL, ADDR ButtonClassName, ADDR sBN,\
+                        WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON,\
+                        24, 2, 21, 21, hWnd, eBN, hInstance, NULL
+                mov hBN, eax
+
                 invoke CreateWindowEx, NULL, ADDR ButtonClassName, ADDR sBW,\
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON,\
-                        24, 2, 21, 21, hWnd, eBW, hInstance, NULL
+                        46, 2, 21, 21, hWnd, eBW, hInstance, NULL
                 mov hBW, eax
-
-                invoke CreateWindowEx, NULL, ADDR ButtonClassName, ADDR sBF,\
-                        WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON,\
-                        46, 2, 21, 21, hWnd, eBF, hInstance, NULL
-                mov hBF, eax
 
                 invoke CreateWindowEx,NULL, ADDR ButtonClassName, ADDR sBC,\
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON,\
                         68, 2, 21, 21, hWnd, eBC, hInstance, NULL
                 mov hBC, eax
 
+                invoke CreateWindowEx, NULL, ADDR ButtonClassName, ADDR sBF,\
+                        WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON,\
+                        90, 2, 21, 21, hWnd, eBF, hInstance, NULL
+                mov hBF, eax
+
                 ; check box
                 invoke CreateWindowEx,NULL, ADDR ButtonClassName, ADDR sRealtimePrint,\
                         WS_CHILD or WS_VISIBLE or BS_AUTOCHECKBOX ,\
-                        93, 2, 115, 21, hWnd, eRealtimePrint, hInstance, NULL
+                        115, 2, 115, 21, hWnd, eRealtimePrint, hInstance, NULL
                 mov hRealtimePrint, eax
                 
                 invoke SendMessage, hRealtimePrint, BM_SETCHECK, 1, 0
@@ -312,7 +318,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                 ; button button
                 invoke CreateWindowEx,NULL, ADDR ButtonClassName, ADDR ButtonClassName,\
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON,\
-                        208, 2, 84, 21, hWnd, eButton, hInstance, NULL
+                        230, 2, 84, 21, hWnd, eButton, hInstance, NULL
                 mov hButton,eax
 
         ; Reacting on messages
@@ -404,227 +410,66 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ; Reacting on button
         .ELSEIF uMsg==WM_COMMAND
                 mov eax,wParam
-                .IF ax==eB
-                        .IF A0==0
-                                mov eax,A1
-                                add eax,A2
-                                add eax,A3
-                                add eax,A4
-                                add eax,A5
-                                add eax,A6
-                                add eax,A7
-                                add eax,A8
-                                add eax,A9
-                                mov A0,eax
-                        .ENDIF
-                        invoke SetWindowText,hE0, ADDR s100
-                          
-                        FINIT
-                        FILD A1
-                        FLD q100
-                        FMUL
-                        FILD A0
-                        FDIV
-                        FST float
-                        invoke FloatToStr2,float, ADDR buffer
-                        .if buffer[1]!='?'
-                                mov buffer[7],0
-                        .else
-                                mov buffer[0],'0'
-                                mov buffer[1],0
-                        .endif
-                        invoke SetWindowText,hE1, ADDR buffer
-
-                        FINIT
-                        FILD A2
-                        FLD q100
-                        FMUL
-                        FILD A0
-                        FDIV
-                        FST float
-                        invoke FloatToStr2,float, ADDR buffer
-                        .if buffer[1]!='?'
-                                mov buffer[7],0
-                        .else
-                                mov buffer[0],'0'
-                                mov buffer[1],0
-                        .endif
-                        invoke SetWindowText,hE2, ADDR buffer
-
-                        FINIT
-                        FILD A3
-                        FLD q100
-                        FMUL
-                        FILD A0
-                        FDIV
-                        FST float
-                        invoke FloatToStr2,float, ADDR buffer
-                        .if buffer[1]!='?'
-                                mov buffer[7],0
-                        .else
-                                mov buffer[0],'0'
-                                mov buffer[1],0
-                        .endif
-                        invoke SetWindowText,hE3, ADDR buffer
-
-                        FINIT
-                        FILD A4
-                        FLD q100
-                        FMUL
-                        FILD A0
-                        FDIV
-                        FST float
-                        invoke FloatToStr2,float, ADDR buffer
-                        .if buffer[1]!='?'
-                                mov buffer[7],0
-                        .else
-                                mov buffer[0],'0'
-                                mov buffer[1],0
-                        .endif
-                        invoke SetWindowText,hE4, ADDR buffer
-
-                        FINIT
-                        FILD A5
-                        FLD q100
-                        FMUL
-                        FILD A0
-                        FDIV
-                        FST float
-                        invoke FloatToStr2,float, ADDR buffer
-                        .if buffer[1]!='?'
-                                mov buffer[7],0
-                        .else
-                                mov buffer[0],'0'
-                                mov buffer[1],0
-                        .endif
-                        invoke SetWindowText,hE5, ADDR buffer
-
-                        FINIT
-                        FILD A6
-                        FLD q100
-                        FMUL
-                        FILD A0
-                        FDIV
-                        FST float
-                        invoke FloatToStr2,float, ADDR buffer
-                        .if buffer[1]!='?'
-                                mov buffer[7],0
-                        .else
-                                mov buffer[0],'0'
-                                mov buffer[1],0
-                        .endif
-                        invoke SetWindowText,hE6, ADDR buffer
-
-                        FINIT
-                        FILD A7
-                        FLD q100
-                        FMUL
-                        FILD A0
-                        FDIV
-                        FST float
-                        invoke FloatToStr2,float, ADDR buffer
-                        .if buffer[1]!='?'
-                                mov buffer[7],0
-                        .else
-                                mov buffer[0],'0'
-                                mov buffer[1],0
-                        .endif
-                        invoke SetWindowText,hE7, ADDR buffer
-
-                        FINIT
-                        FILD A8
-                        FLD q100
-                        FMUL
-                        FILD A0
-                        FDIV
-                        FST float
-                        invoke FloatToStr2,float, ADDR buffer
-                        .if buffer[1]!='?'
-                                mov buffer[7],0
-                        .else
-                                mov buffer[0],'0'
-                                mov buffer[1],0
-                        .endif
-                        invoke SetWindowText,hE8, ADDR buffer
-
-                        FINIT
-                        FILD A9
-                        FLD q100
-                        FMUL
-                        FILD A0
-                        FDIV
-                        FST float
-                        invoke FloatToStr2,float, ADDR buffer
-                        .if buffer[1]!='?'
-                                mov buffer[7],0
-                        .else
-                                mov buffer[0],'0'
-                                mov buffer[1],0
-                        .endif
-                        invoke SetWindowText,hE9, ADDR buffer
-                                                
-                .ELSEIF ax==eB0
-                        mov A0,0
-                        mov A1,0
-                        mov A2,0
-                        mov A3,0
-                        mov A4,0
-                        mov A5,0
-                        mov A6,0
-                        mov A7,0
-                        mov A8,0
-                        mov A9,0
-                        mov A10,0
-                        invoke SetWindowText,hE0, ADDR sA
-                        invoke SetWindowText,hE1, ADDR sA
-                        invoke SetWindowText,hE2, ADDR sA
-                        invoke SetWindowText,hE3, ADDR sA
-                        invoke SetWindowText,hE4, ADDR sA
-                        invoke SetWindowText,hE5, ADDR sA
-                        invoke SetWindowText,hE6, ADDR sA
-                        invoke SetWindowText,hE7, ADDR sA
-                        invoke SetWindowText,hE8, ADDR sA
-                        invoke SetWindowText,hE9, ADDR sA
+                .IF ax==eB0
+                        mov i, 0
+                        .repeat
+                                mov esi, offset dCounterValues
+                                mov ecx, i
+                                xor eax, eax
+                                mov [esi + ecx*4], eax
+                                mov esi, offset hCounters
+                                mov ecx, i
+                                invoke SetWindowText, [esi + ecx*4], addr sZero
+                                inc i
+                        .until i==MAX_COUNTERS
                         invoke dwtoa, hWnd, ADDR buffer
                         invoke SetWindowText,hWnd, ADDR buffer
-                .ELSEIF ax==eB1
-                        invoke dwtoa,A0,addr buffer
-                        invoke SetWindowText,hE0, ADDR buffer
-                        invoke dwtoa,A1,addr buffer
-                        invoke SetWindowText,hE1, ADDR buffer
-                        invoke dwtoa,A2,addr buffer
-                        invoke SetWindowText,hE2, ADDR buffer
-                        invoke dwtoa,A3,addr buffer
-                        invoke SetWindowText,hE3, ADDR buffer
-                        invoke dwtoa,A4,addr buffer
-                        invoke SetWindowText,hE4, ADDR buffer
-                        invoke dwtoa,A5,addr buffer
-                        invoke SetWindowText,hE5, ADDR buffer
-                        invoke dwtoa,A6,addr buffer
-                        invoke SetWindowText,hE6, ADDR buffer
-                        invoke dwtoa,A7,addr buffer
-                        invoke SetWindowText,hE7, ADDR buffer
-                        invoke dwtoa,A8,addr buffer
-                        invoke SetWindowText,hE8, ADDR buffer
-                        invoke dwtoa,A9,addr buffer
-                        invoke SetWindowText,hE9, ADDR buffer
+                .ELSEIF ax==eBN
+                        mov i, 0
+                        .repeat
+                                mov esi, offset dCounterValues
+                                mov ecx, i
+                                invoke dwtoa, [esi + ecx*4], addr buffer
+                                mov esi, offset hCounters
+                                mov ecx, i
+                                invoke SetWindowText, [esi + ecx*4], addr buffer
+                                inc i
+                        .until i==MAX_COUNTERS
                 .ELSEIF ax==eBW 
                         invoke lstrcpy, ADDR buffer, ADDR sProgramWindowHandler
                         invoke dwtoa,hWnd,addr buf1
                         invoke szCatStr, ADDR buffer, ADDR buf1
+                        invoke MessageBox,0, ADDR buffer, ADDR sCopyToClipboard, MB_YESNO
+                        .IF eax==IDYES
+                                invoke OpenClipboard,0
+                                invoke EmptyClipboard
+                                invoke GlobalAlloc, GMEM_MOVEABLE or GMEM_DDESHARE,32
+                                mov hand,eax
+                                invoke GlobalLock, hand
+                                mov addre,eax
+                                invoke lstrcpy, addre, ADDR buf1
+                                invoke GlobalUnlock, hand
+                                invoke SetClipboardData, CF_TEXT, hand
+                                invoke CloseClipboard
+                        .ENDIF
+                .ELSEIF ax==eBC
+                        invoke lstrcpy, ADDR buffer, ADDR sCLeft
+                        invoke dwtoa,hWnd,addr buf1
+                        invoke szCatStr, ADDR buffer, ADDR buf1
+                        invoke szCatStr, ADDR buffer, ADDR sCRight
                         invoke MessageBox,0, ADDR buffer, ADDR sCopyToClipboard,MB_YESNO
                         .IF eax==IDYES
                                 invoke OpenClipboard,0
                                 invoke EmptyClipboard
-                                invoke GlobalAlloc,GMEM_MOVEABLE or GMEM_DDESHARE,32
+                                invoke GlobalAlloc,GMEM_MOVEABLE or GMEM_DDESHARE,64
                                 mov hand,eax
                                 invoke GlobalLock,hand
                                 mov addre,eax
-                                invoke lstrcpy,addre, ADDR buf1
+                                invoke lstrcpy,addre, ADDR buffer
                                 invoke GlobalUnlock,hand
                                 invoke SetClipboardData,CF_TEXT,hand
                                 invoke CloseClipboard
-                        .ENDIF  
+                        .ENDIF   
                 .ELSEIF ax==eBF
                         mov text[0],0
                         invoke GetSystemTime,addr syst
@@ -657,65 +502,20 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         invoke szCatStr,addr text,addr sEOL
                         invoke szCatStr,addr text,addr sEOL
                         
-                        invoke szCatStr, ADDR text, ADDR s0
-                        invoke szCatStr, ADDR text, ADDR sSp
-                        invoke GetWindowText,hE0, ADDR buffer,512
-                        invoke szCatStr, ADDR text, ADDR buffer
-                        invoke szCatStr, ADDR text, ADDR sEOL
-                        
-                        invoke szCatStr, ADDR text, ADDR s1
-                        invoke szCatStr, ADDR text, ADDR sSp
-                        invoke GetWindowText,hE1, ADDR buffer,512
-                        invoke szCatStr, ADDR text, ADDR buffer
-                        invoke szCatStr, ADDR text, ADDR sEOL
-
-                        invoke szCatStr, ADDR text, ADDR s2
-                        invoke szCatStr, ADDR text, ADDR sSp
-                        invoke GetWindowText,hE2, ADDR buffer,512
-                        invoke szCatStr, ADDR text, ADDR buffer
-                        invoke szCatStr, ADDR text, ADDR sEOL
-
-                        invoke szCatStr, ADDR text, ADDR s3
-                        invoke szCatStr, ADDR text, ADDR sSp
-                        invoke GetWindowText,hE3, ADDR buffer,512
-                        invoke szCatStr, ADDR text, ADDR buffer
-                        invoke szCatStr, ADDR text, ADDR sEOL
-
-                        invoke szCatStr, ADDR text, ADDR s4
-                        invoke szCatStr, ADDR text, ADDR sSp
-                        invoke GetWindowText,hE4, ADDR buffer,512
-                        invoke szCatStr, ADDR text, ADDR buffer
-                        invoke szCatStr, ADDR text, ADDR sEOL
-
-                        invoke szCatStr, ADDR text, ADDR s5
-                        invoke szCatStr, ADDR text, ADDR sSp
-                        invoke GetWindowText,hE5, ADDR buffer,512
-                        invoke szCatStr, ADDR text, ADDR buffer
-                        invoke szCatStr, ADDR text, ADDR sEOL
-
-                        invoke szCatStr, ADDR text, ADDR s6
-                        invoke szCatStr, ADDR text, ADDR sSp
-                        invoke GetWindowText,hE6, ADDR buffer,512
-                        invoke szCatStr, ADDR text, ADDR buffer
-                        invoke szCatStr, ADDR text, ADDR sEOL
-
-                        invoke szCatStr, ADDR text, ADDR s7
-                        invoke szCatStr, ADDR text, ADDR sSp
-                        invoke GetWindowText,hE7, ADDR buffer,512
-                        invoke szCatStr, ADDR text, ADDR buffer
-                        invoke szCatStr, ADDR text, ADDR sEOL
-
-                        invoke szCatStr, ADDR text, ADDR s8
-                        invoke szCatStr, ADDR text, ADDR sSp
-                        invoke GetWindowText,hE8, ADDR buffer,512
-                        invoke szCatStr, ADDR text, ADDR buffer
-                        invoke szCatStr, ADDR text, ADDR sEOL
-
-                        invoke szCatStr, ADDR text, ADDR s9
-                        invoke szCatStr, ADDR text, ADDR sSp
-                        invoke GetWindowText,hE9, ADDR buffer,512
-                        invoke szCatStr, ADDR text, ADDR buffer
-                        invoke szCatStr, ADDR text, ADDR sEOL
+                        mov i, 0
+                        .repeat
+                                ; index
+                                invoke dwtoa, i, addr buffer
+                                invoke szCatStr, ADDR text, ADDR buffer
+                                invoke szCatStr, ADDR text, ADDR sColon
+                                invoke szCatStr, ADDR text, ADDR sSpace
+                                mov esi, offset hCounters
+                                mov ecx, i
+                                invoke GetWindowText, [esi + ecx*4], addr buffer, 512
+                                invoke szCatStr, ADDR text, ADDR buffer
+                                invoke szCatStr, ADDR text, ADDR sEOL
+                                inc i
+                        .until i==MAX_COUNTERS
 
                         invoke RtlZeroMemory,addr ofn,sizeof ofn
                         mov ofn.lStructSize,SIZEOF ofn
@@ -745,25 +545,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                                 mov do_realtime_print, 0
                         .ELSE
                                 mov do_realtime_print, 1
-                        .ENDIF
-                .ELSEIF ax==eBC
-                        invoke lstrcpy, ADDR buffer, ADDR sCLeft
-                        invoke dwtoa,hWnd,addr buf1
-                        invoke szCatStr, ADDR buffer, ADDR buf1
-                        invoke szCatStr, ADDR buffer, ADDR sCRight
-                        invoke MessageBox,0, ADDR buffer, ADDR sCopyToClipboard,MB_YESNO
-                        .IF eax==IDYES
-                                invoke OpenClipboard,0
-                                invoke EmptyClipboard
-                                invoke GlobalAlloc,GMEM_MOVEABLE or GMEM_DDESHARE,64
-                                mov hand,eax
-                                invoke GlobalLock,hand
-                                mov addre,eax
-                                invoke lstrcpy,addre, ADDR buffer
-                                invoke GlobalUnlock,hand
-                                invoke SetClipboardData,CF_TEXT,hand
-                                invoke CloseClipboard
-                        .ENDIF  
+                        .ENDIF 
                 .ELSEIF ax==eButton
                         inc Button_count
                 .ENDIF
