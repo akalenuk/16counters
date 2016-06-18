@@ -47,11 +47,6 @@ ButtonClassName db "button",0
 StaticClassName db "static",0
 EditClassName db "edit",0
 
-; dialogs
-sProgramWindowHandler db "Program window handler: ",0
-sCopyToClipboard db "Copy to clipboard?",0
-sProfileResults db "Counters report:",0
-
 ; buttons
 sB0 db "0", 0
 sBN db "N", 0
@@ -75,49 +70,51 @@ sDash db "-",0
 sZero db "0", 0
 sColon db ":", 0
 
-ofn OPENFILENAME <>
+; program handler dialog
+sProgramWindowHandler db "Program window handler: ",0
+sCopyToClipboard db "Copy to clipboard?",0
 
+; file saving dialog
+ofn OPENFILENAME <>
 FilterString db "Counters reports", 0, "*.counters", 0, "All Files", 0, "*.*", 0, 0
 sExtension db ".counters",0
+sProfileResults db "Counters report:",0
 Button_count DWORD 0
 
+; C-style send message dialog
 sCLeft  db "SendMessage((HWND)",0
 sCRight db ", WM_USER, 'I', 0);",0
 
 .data?
-chE HWND ?
-hE0 HWND ?
-hE1 HWND ?
-hE2 HWND ?
-hE3 HWND ?
-hE4 HWND ?
-hE5 HWND ?
-hE6 HWND ?
-hE7 HWND ?
-hE8 HWND ?
-hE9 HWND ?
-hE10 HWND ?
-hB HWND ?
-hButton HWND ?
+; mandatories
+hInstance HINSTANCE ?
+CommandLine LPSTR ?
+
+; button handlers
 hB0 HWND ?
 hBN HWND ?
 hBW HWND ?
-hBF HWND ?
-hRealtimePrint HWND ?
 hBC HWND ?
-hS0 HWND ?
-hS5 HWND ?
+hBF HWND ?
 
-hCounters HWND 16 dup(?)
+; checkbox
+hRealtimePrint HWND ?
+
+; 'button'
+hButton HWND ?
+
+; counter handlers
+hCounterHandlers HWND 16 dup(?)
 dCounterValues DWORD 16 dup(?)
 dCounterTimers DWORD 16 dup(?)
 
-hInstance HINSTANCE ?
-CommandLine LPSTR ?
-buffer db 512 dup(?)
-buf1 db 16 dup(?)
-sHWND db 16 dup(?)
-text db 65536 dup(?)
+
+
+; text buffers
+TextBuffer db 512 dup(?)
+SmallerBuffer db 16 dup(?)
+ReportBuffer db 65536 dup(?)
+
 hand DWORD ?
 addre DWORD ?
 float QWORD ?
@@ -191,8 +188,8 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                 invoke PostQuitMessage,NULL
         ; Setting up UI
         .ELSEIF uMsg==WM_CREATE
-                invoke dwtoa, hWnd, ADDR sHWND
-                invoke SetWindowText,hWnd, ADDR sHWND
+                invoke dwtoa, hWnd, ADDR SmallerBuffer
+                invoke SetWindowText,hWnd, ADDR SmallerBuffer
 
                 ; set initial window position  
                 invoke GetDesktopWindow
@@ -222,7 +219,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR EditClassName, ADDR sZero,\
                                 WS_CHILD or WS_VISIBLE or ES_LEFT or ES_AUTOHSCROLL,\
                                 x, y, 84, 18, hWnd, i, hInstance, NULL
-                        mov esi, offset hCounters
+                        mov esi, offset hCounterHandlers
                         mov ecx, i
                         mov [esi + ecx*4], eax
                         inc i
@@ -363,10 +360,10 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                 .if do_realtime_print==1
                         mov esi, offset dCounterValues
                         mov ecx, i
-                        invoke dwtoa, [esi + ecx*4], addr buffer
-                        mov esi, offset hCounters
+                        invoke dwtoa, [esi + ecx*4], addr TextBuffer
+                        mov esi, offset hCounterHandlers
                         mov ecx, i
-                        invoke SetWindowText, [esi + ecx*4], addr buffer
+                        invoke SetWindowText, [esi + ecx*4], addr TextBuffer
                 .endif
 
         ; Reacting on button
@@ -379,47 +376,47 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                                 mov ecx, i
                                 xor eax, eax
                                 mov [esi + ecx*4], eax
-                                mov esi, offset hCounters
+                                mov esi, offset hCounterHandlers
                                 mov ecx, i
                                 invoke SetWindowText, [esi + ecx*4], addr sZero
                                 inc i
                         .until i==MAX_COUNTERS
-                        invoke dwtoa, hWnd, ADDR buffer
-                        invoke SetWindowText,hWnd, ADDR buffer
+                        invoke dwtoa, hWnd, ADDR TextBuffer
+                        invoke SetWindowText,hWnd, ADDR TextBuffer
                 .ELSEIF ax==eBN
                         mov i, 0
                         .repeat
                                 mov esi, offset dCounterValues
                                 mov ecx, i
-                                invoke dwtoa, [esi + ecx*4], addr buffer
-                                mov esi, offset hCounters
+                                invoke dwtoa, [esi + ecx*4], addr TextBuffer
+                                mov esi, offset hCounterHandlers
                                 mov ecx, i
-                                invoke SetWindowText, [esi + ecx*4], addr buffer
+                                invoke SetWindowText, [esi + ecx*4], addr TextBuffer
                                 inc i
                         .until i==MAX_COUNTERS
                 .ELSEIF ax==eBW 
-                        invoke lstrcpy, ADDR buffer, ADDR sProgramWindowHandler
-                        invoke dwtoa,hWnd,addr buf1
-                        invoke szCatStr, ADDR buffer, ADDR buf1
-                        invoke MessageBox,0, ADDR buffer, ADDR sCopyToClipboard, MB_YESNO
+                        invoke lstrcpy, ADDR TextBuffer, ADDR sProgramWindowHandler
+                        invoke dwtoa, hWnd, addr SmallerBuffer
+                        invoke szCatStr, ADDR TextBuffer, ADDR SmallerBuffer
+                        invoke MessageBox,0, ADDR TextBuffer, ADDR sCopyToClipboard, MB_YESNO
                         .IF eax==IDYES
                                 invoke OpenClipboard,0
                                 invoke EmptyClipboard
                                 invoke GlobalAlloc, GMEM_MOVEABLE or GMEM_DDESHARE,32
-                                mov hand,eax
+                                mov hand, eax
                                 invoke GlobalLock, hand
-                                mov addre,eax
-                                invoke lstrcpy, addre, ADDR buf1
+                                mov addre, eax
+                                invoke lstrcpy, addre, ADDR SmallerBuffer
                                 invoke GlobalUnlock, hand
                                 invoke SetClipboardData, CF_TEXT, hand
                                 invoke CloseClipboard
                         .ENDIF
                 .ELSEIF ax==eBC
-                        invoke lstrcpy, ADDR buffer, ADDR sCLeft
-                        invoke dwtoa,hWnd,addr buf1
-                        invoke szCatStr, ADDR buffer, ADDR buf1
-                        invoke szCatStr, ADDR buffer, ADDR sCRight
-                        invoke MessageBox,0, ADDR buffer, ADDR sCopyToClipboard,MB_YESNO
+                        invoke lstrcpy, ADDR TextBuffer, ADDR sCLeft
+                        invoke dwtoa,hWnd,addr SmallerBuffer
+                        invoke szCatStr, ADDR TextBuffer, ADDR SmallerBuffer
+                        invoke szCatStr, ADDR TextBuffer, ADDR sCRight
+                        invoke MessageBox,0, ADDR TextBuffer, ADDR sCopyToClipboard,MB_YESNO
                         .IF eax==IDYES
                                 invoke OpenClipboard,0
                                 invoke EmptyClipboard
@@ -427,57 +424,57 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                                 mov hand,eax
                                 invoke GlobalLock,hand
                                 mov addre,eax
-                                invoke lstrcpy,addre, ADDR buffer
+                                invoke lstrcpy,addre, ADDR TextBuffer
                                 invoke GlobalUnlock,hand
                                 invoke SetClipboardData,CF_TEXT,hand
                                 invoke CloseClipboard
                         .ENDIF
                 ; Save report fo file
                 .ELSEIF ax==eBF
-                        mov text[0],0
+                        mov ReportBuffer[0],0
                         invoke GetSystemTime,addr syst
                         xor eax,eax
                         mov ax,syst.wDay
-                        invoke dwtoa,eax,addr buffer
-                        invoke szCatStr,addr text, addr buffer
-                        invoke szCatStr,addr text, addr sDash
+                        invoke dwtoa,eax,addr TextBuffer
+                        invoke szCatStr,addr ReportBuffer, addr TextBuffer
+                        invoke szCatStr,addr ReportBuffer, addr sDash
                         xor eax,eax
                         mov ax,syst.wMonth
-                        invoke dwtoa,eax,addr buffer
-                        invoke szCatStr,addr text, addr buffer
-                        invoke szCatStr,addr text, addr sDash
+                        invoke dwtoa,eax,addr TextBuffer
+                        invoke szCatStr,addr ReportBuffer, addr TextBuffer
+                        invoke szCatStr,addr ReportBuffer, addr sDash
                         xor eax,eax
                         mov ax,syst.wYear
-                        invoke dwtoa,eax,addr buffer
-                        invoke szCatStr,addr text, addr buffer
-                        invoke szCatStr,addr text, addr sTab
+                        invoke dwtoa,eax,addr TextBuffer
+                        invoke szCatStr,addr ReportBuffer, addr TextBuffer
+                        invoke szCatStr,addr ReportBuffer, addr sTab
                         xor eax,eax
                         mov ax,syst.wHour
-                        invoke dwtoa,eax,addr buffer
-                        invoke szCatStr,addr text, addr buffer
-                        invoke szCatStr,addr text,addr sColon
+                        invoke dwtoa,eax,addr TextBuffer
+                        invoke szCatStr,addr ReportBuffer, addr TextBuffer
+                        invoke szCatStr,addr ReportBuffer,addr sColon
                         xor eax,eax
                         mov ax,syst.wMinute
-                        invoke dwtoa,eax,addr buffer
-                        invoke szCatStr,addr text, addr buffer
-                        invoke szCatStr,addr text,addr sEOL
-                        invoke szCatStr,addr text,addr sProfileResults
-                        invoke szCatStr,addr text,addr sEOL
-                        invoke szCatStr,addr text,addr sEOL
+                        invoke dwtoa,eax,addr TextBuffer
+                        invoke szCatStr,addr ReportBuffer, addr TextBuffer
+                        invoke szCatStr,addr ReportBuffer,addr sEOL
+                        invoke szCatStr,addr ReportBuffer,addr sProfileResults
+                        invoke szCatStr,addr ReportBuffer,addr sEOL
+                        invoke szCatStr,addr ReportBuffer,addr sEOL
                         
                         mov i, 0
                         .repeat
                                 ; index
-                                invoke dwtoa, i, addr buffer
-                                invoke szCatStr, ADDR text, ADDR buffer
-                                invoke szCatStr, ADDR text, ADDR sColon
-                                invoke szCatStr, ADDR text, ADDR sTab
+                                invoke dwtoa, i, addr TextBuffer
+                                invoke szCatStr, ADDR ReportBuffer, ADDR TextBuffer
+                                invoke szCatStr, ADDR ReportBuffer, ADDR sColon
+                                invoke szCatStr, ADDR ReportBuffer, ADDR sTab
                                 ; value
-                                mov esi, offset hCounters
+                                mov esi, offset hCounterHandlers
                                 mov ecx, i
-                                invoke GetWindowText, [esi + ecx*4], addr buffer, 512
-                                invoke szCatStr, ADDR text, ADDR buffer
-                                invoke szCatStr, ADDR text, ADDR sEOL
+                                invoke GetWindowText, [esi + ecx*4], addr TextBuffer, 512
+                                invoke szCatStr, ADDR ReportBuffer, ADDR TextBuffer
+                                invoke szCatStr, ADDR ReportBuffer, ADDR sEOL
                                 inc i
                         .until i==MAX_COUNTERS
 
@@ -488,20 +485,20 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         push hInstance
                         pop ofn.hInstance
                         mov ofn.lpstrFilter, OFFSET FilterString
-                        mov ofn.lpstrFile, OFFSET buffer
+                        mov ofn.lpstrFile, OFFSET TextBuffer
                         mov ofn.nMaxFile, MAX_FILE_SIZE
-                        mov buffer[0],0
+                        mov TextBuffer[0],0
                         mov ofn.Flags,OFN_LONGNAMES or OFN_EXPLORER or OFN_HIDEREADONLY
                         invoke GetSaveFileName, ADDR ofn
                         .if eax==TRUE
-                                invoke szCatStr, ADDR buffer, ADDR sExtension
-                                invoke CreateFile, ADDR buffer,\
+                                invoke szCatStr, ADDR TextBuffer, ADDR sExtension
+                                invoke CreateFile, ADDR TextBuffer,\
                                         GENERIC_READ or GENERIC_WRITE ,\
                                         FILE_SHARE_READ or FILE_SHARE_WRITE,\
                                         NULL,CREATE_NEW,FILE_ATTRIBUTE_ARCHIVE,NULL
                                 mov hFile,eax
-                                invoke lstrlen, ADDR text
-                                invoke _lwrite,hFile, ADDR text,eax
+                                invoke lstrlen, ADDR ReportBuffer
+                                invoke _lwrite,hFile, ADDR ReportBuffer, eax
                                 invoke CloseHandle,hFile
                         .endif
                 .ELSEIF ax==eRealtimePrint
