@@ -19,16 +19,20 @@ includelib \masm32\lib\comdlg32.lib
 
 .const
 ; 0-15 reserved for counters
+
 ; buttons
 eB0 equ 100
 eBN equ 101
 eBW equ 102
 eBC equ 103
 eBF equ 104
+
 ; checkbox
 eRealtimePrint equ 110
+
 ; 'button'
 eButton equ 120
+
 ; labels
 eL03 equ 130
 eL47 equ 131
@@ -71,19 +75,22 @@ sZero db "0", 0
 sColon db ":", 0
 
 ; program handler dialog
-sProgramWindowHandler db "Program window handler: ",0
-sCopyToClipboard db "Copy to clipboard?",0
+sProgramWindowHandler db "Program window handler: ", 0
+sCopyToClipboard db "Copy to clipboard?", 0
 
 ; file saving dialog
 ofn OPENFILENAME <>
 FilterString db "Counters reports", 0, "*.counters", 0, "All Files", 0, "*.*", 0, 0
 sExtension db ".counters",0
-sProfileResults db "Counters report:",0
-Button_count DWORD 0
+sProfileResults db "Counters report:", 0
+button_count DWORD 0
 
 ; C-style send message dialog
-sCLeft  db "SendMessage((HWND)",0
-sCRight db ", WM_USER, 'I', 0);",0
+sCLeft  db "SendMessage((HWND)", 0
+sCRight db ", WM_USER, 'I', 0);", 0
+
+; realtime printing flag
+do_realtime_print db 0
 
 .data?
 ; mandatories
@@ -105,26 +112,20 @@ hButton HWND ?
 
 ; counter handlers
 hCounterHandlers HWND 16 dup(?)
-dCounterValues DWORD 16 dup(?)
-dCounterTimers DWORD 16 dup(?)
-
-
+counter_values DWORD 16 dup(?)
+counter_timers DWORD 16 dup(?)
 
 ; text buffers
 TextBuffer db 512 dup(?)
 SmallerBuffer db 16 dup(?)
 ReportBuffer db 65536 dup(?)
 
-hand DWORD ?
-addre DWORD ?
-float QWORD ?
-hFile HANDLE ?
-hMemory HANDLE ?
-pMemory DWORD ?
-SizeReadWrite DWORD ?
-do_realtime_print db ?
-fqTemp QWORD ?
+; clipboard
+ClipboardMemoryHandler DWORD ?
+ClipboardMemoryAddress DWORD ?
 
+; reporting
+hFile HANDLE ?
 
 .code
 start:
@@ -133,7 +134,6 @@ start:
         invoke GetCommandLine
         invoke WinMain, hInstance,NULL,CommandLine, SW_SHOWDEFAULT
         invoke ExitProcess,eax
-
 
 WinMain proc hInst:HINSTANCE,hPrevInst:HINSTANCE,CmdLine:LPSTR,CmdShow:DWORD
         LOCAL wc:WNDCLASSEX
@@ -147,21 +147,21 @@ WinMain proc hInst:HINSTANCE,hPrevInst:HINSTANCE,CmdLine:LPSTR,CmdShow:DWORD
         push hInst
         pop wc.hInstance
         mov wc.hbrBackground,COLOR_BTNFACE+1
-        mov wc.lpszMenuName,OFFSET MenuName
-        mov wc.lpszClassName,OFFSET ClassName
-        invoke LoadIcon,hInstance,500
-        mov wc.hIcon,eax
-        invoke LoadIcon,hInstance,501
-        mov wc.hIconSm,eax
+        mov wc.lpszMenuName, OFFSET MenuName
+        mov wc.lpszClassName, OFFSET ClassName
+        invoke LoadIcon,hInstance, 500
+        mov wc.hIcon, eax
+        invoke LoadIcon,hInstance, 501
+        mov wc.hIconSm, eax
         invoke LoadCursor,NULL,IDC_ARROW
-        mov wc.hCursor,eax
+        mov wc.hCursor, eax
         invoke RegisterClassEx, addr wc
         invoke CreateWindowEx,WS_EX_LEFT, ADDR ClassName, ADDR AppName,\
                 WS_OVERLAPPEDWINDOW - WS_MAXIMIZEBOX,CW_USEDEFAULT,\
                 CW_USEDEFAULT, 420, 160, NULL, NULL,\
                 hInst,NULL
-        mov hwnd,eax
-        invoke ShowWindow, hwnd,SW_SHOWNORMAL
+        mov hwnd, eax
+        invoke ShowWindow, hwnd, SW_SHOWNORMAL
         invoke UpdateWindow, hwnd
         .WHILE TRUE
                 invoke GetMessage, ADDR msg, NULL, 0, 0
@@ -169,7 +169,7 @@ WinMain proc hInst:HINSTANCE,hPrevInst:HINSTANCE,CmdLine:LPSTR,CmdShow:DWORD
                 invoke TranslateMessage, ADDR msg
                 invoke DispatchMessage, ADDR msg
         .ENDW
-        mov eax,msg.wParam
+        mov eax, msg.wParam
         ret
 WinMain endp
 
@@ -293,7 +293,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
                 ; set counter
                 .if wParam<16
-                        mov esi, offset dCounterValues
+                        mov esi, offset counter_values
                         mov ecx, i
                         mov eax, lParam
                         mov [esi + ecx*4], eax
@@ -301,8 +301,8 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
                 ; return 'button' click count
                 .if wParam=='B'
-                        mov eax, Button_count
-                        sub Button_count, eax
+                        mov eax, button_count
+                        sub button_count, eax
                         ret
                 .endif
 
@@ -314,7 +314,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
                 ; nullify counter
                 .if wParam=='0'
-                        mov esi, offset dCounterValues
+                        mov esi, offset counter_values
                         mov ecx, i
                         mov eax, 0
                         mov [esi + ecx*4], eax
@@ -323,7 +323,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                 ; start timing
                 .if wParam=='T'
                         invoke GetTickCount 
-                        mov esi, offset dCounterTimers
+                        mov esi, offset counter_timers
                         mov ecx, i
                         mov [esi + ecx*4], eax
                 .endif
@@ -331,16 +331,16 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                 ; stop timing
                 .if wParam=='S'
                         invoke GetTickCount 
-                        mov esi, offset dCounterTimers
+                        mov esi, offset counter_timers
                         mov ecx, i
                         sub eax, [esi + ecx*4]
-                        mov esi, offset dCounterValues
+                        mov esi, offset counter_values
                         mov [esi + ecx*4], eax
                 .endif
 
                 ; increment counter
                 .if wParam=='I'
-                        mov esi, offset dCounterValues
+                        mov esi, offset counter_values
                         mov ecx, i
                         mov eax, [esi + ecx*4]
                         inc eax
@@ -349,7 +349,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
                 ; decrement counter
                 .if wParam=='D'
-                        mov esi, offset dCounterValues
+                        mov esi, offset counter_values
                         mov ecx, i
                         mov eax, [esi + ecx*4]
                         dec eax
@@ -358,7 +358,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
                 ; update counters
                 .if do_realtime_print==1
-                        mov esi, offset dCounterValues
+                        mov esi, offset counter_values
                         mov ecx, i
                         invoke dwtoa, [esi + ecx*4], addr TextBuffer
                         mov esi, offset hCounterHandlers
@@ -369,10 +369,12 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ; Reacting on button
         .ELSEIF uMsg==WM_COMMAND
                 mov eax,wParam
+
+                ; nullify counters
                 .IF ax==eB0
                         mov i, 0
                         .repeat
-                                mov esi, offset dCounterValues
+                                mov esi, offset counter_values
                                 mov ecx, i
                                 xor eax, eax
                                 mov [esi + ecx*4], eax
@@ -383,10 +385,12 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         .until i==MAX_COUNTERS
                         invoke dwtoa, hWnd, ADDR TextBuffer
                         invoke SetWindowText,hWnd, ADDR TextBuffer
+
+                ; update counters on screen (if no realtime printing on)
                 .ELSEIF ax==eBN
                         mov i, 0
                         .repeat
-                                mov esi, offset dCounterValues
+                                mov esi, offset counter_values
                                 mov ecx, i
                                 invoke dwtoa, [esi + ecx*4], addr TextBuffer
                                 mov esi, offset hCounterHandlers
@@ -394,6 +398,8 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                                 invoke SetWindowText, [esi + ecx*4], addr TextBuffer
                                 inc i
                         .until i==MAX_COUNTERS
+
+                ; copy the handler to clipboard
                 .ELSEIF ax==eBW 
                         invoke lstrcpy, ADDR TextBuffer, ADDR sProgramWindowHandler
                         invoke dwtoa, hWnd, addr SmallerBuffer
@@ -403,14 +409,16 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                                 invoke OpenClipboard,0
                                 invoke EmptyClipboard
                                 invoke GlobalAlloc, GMEM_MOVEABLE or GMEM_DDESHARE,32
-                                mov hand, eax
-                                invoke GlobalLock, hand
-                                mov addre, eax
-                                invoke lstrcpy, addre, ADDR SmallerBuffer
-                                invoke GlobalUnlock, hand
-                                invoke SetClipboardData, CF_TEXT, hand
+                                mov ClipboardMemoryHandler, eax
+                                invoke GlobalLock, ClipboardMemoryHandler
+                                mov ClipboardMemoryAddress, eax
+                                invoke lstrcpy, ClipboardMemoryAddress, ADDR SmallerBuffer
+                                invoke GlobalUnlock, ClipboardMemoryHandler
+                                invoke SetClipboardData, CF_TEXT, ClipboardMemoryHandler
                                 invoke CloseClipboard
                         .ENDIF
+
+                ; copy the handler with C-style messaging example
                 .ELSEIF ax==eBC
                         invoke lstrcpy, ADDR TextBuffer, ADDR sCLeft
                         invoke dwtoa,hWnd,addr SmallerBuffer
@@ -418,22 +426,24 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         invoke szCatStr, ADDR TextBuffer, ADDR sCRight
                         invoke MessageBox,0, ADDR TextBuffer, ADDR sCopyToClipboard,MB_YESNO
                         .IF eax==IDYES
-                                invoke OpenClipboard,0
+                                invoke OpenClipboard, 0
                                 invoke EmptyClipboard
-                                invoke GlobalAlloc,GMEM_MOVEABLE or GMEM_DDESHARE,64
-                                mov hand,eax
-                                invoke GlobalLock,hand
-                                mov addre,eax
-                                invoke lstrcpy,addre, ADDR TextBuffer
-                                invoke GlobalUnlock,hand
-                                invoke SetClipboardData,CF_TEXT,hand
+                                invoke GlobalAlloc, GMEM_MOVEABLE or GMEM_DDESHARE, 64
+                                mov ClipboardMemoryHandler, eax
+                                invoke GlobalLock, ClipboardMemoryHandler
+                                mov ClipboardMemoryAddress, eax
+                                invoke lstrcpy, ClipboardMemoryAddress, ADDR TextBuffer
+                                invoke GlobalUnlock, ClipboardMemoryHandler
+                                invoke SetClipboardData, CF_TEXT, ClipboardMemoryHandler
                                 invoke CloseClipboard
                         .ENDIF
-                ; Save report fo file
+
+                ; save report to file
                 .ELSEIF ax==eBF
                         mov ReportBuffer[0],0
                         invoke GetSystemTime,addr syst
                         xor eax,eax
+                        ; date
                         mov ax,syst.wDay
                         invoke dwtoa,eax,addr TextBuffer
                         invoke szCatStr,addr ReportBuffer, addr TextBuffer
@@ -447,8 +457,9 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         mov ax,syst.wYear
                         invoke dwtoa,eax,addr TextBuffer
                         invoke szCatStr,addr ReportBuffer, addr TextBuffer
-                        invoke szCatStr,addr ReportBuffer, addr sTab
+                        invoke szCatStr,addr ReportBuffer, addr sTab                
                         xor eax,eax
+                        ; time
                         mov ax,syst.wHour
                         invoke dwtoa,eax,addr TextBuffer
                         invoke szCatStr,addr ReportBuffer, addr TextBuffer
@@ -496,7 +507,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                                         GENERIC_READ or GENERIC_WRITE ,\
                                         FILE_SHARE_READ or FILE_SHARE_WRITE,\
                                         NULL,CREATE_NEW,FILE_ATTRIBUTE_ARCHIVE,NULL
-                                mov hFile,eax
+                                mov hFile, eax
                                 invoke lstrlen, ADDR ReportBuffer
                                 invoke _lwrite,hFile, ADDR ReportBuffer, eax
                                 invoke CloseHandle,hFile
@@ -508,7 +519,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                                 mov do_realtime_print, 1
                         .ENDIF 
                 .ELSEIF ax==eButton
-                        inc Button_count
+                        inc button_count
                 .ENDIF
         .ELSE
                 invoke DefWindowProc,hWnd,uMsg,wParam,lParam
