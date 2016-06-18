@@ -146,6 +146,8 @@ hS0 HWND ?
 hS5 HWND ?
 
 hCounters HWND 16 dup(?)
+dCounterValues DWORD 16 dup(?)
+dCounterTimers DWORD 16 dup(?)
 
 hInstance HINSTANCE ?
 CommandLine LPSTR ?
@@ -315,426 +317,91 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         ; Reacting on messages
         .ELSEIF uMsg==WM_USER
-                .if wParam=='B';66
+                ; two kinds of interfaces
+                .if wParam<MAX_COUNTERS
+                        mov eax, wParam
+                        mov i, eax   ; (..., 4, 123) - (counter, value)
+                .else
+                        mov eax, lParam
+                        mov i, eax   ; (..., 'T', 4) - (command, counter)
+                .endif
+
+                ; set counter
+                .if wParam<16
+                        mov esi, offset dCounterValues
+                        mov ecx, i
+                        mov eax, lParam
+                        mov [esi + ecx*4], eax
+                .endif
+
+                ; return 'button' click count
+                .if wParam=='B'
                         mov eax, Button_count
                         sub Button_count, eax
                         ret
                 .endif
-                .if wParam=='Q';81
+
+                ; set default thread quant (might not work properly on newer Windows)
+                .if wParam=='Q'
                         invoke timeBeginPeriod,lParam
                         ret
                 .endif
-                .if do_realtime_print==1
-                        .IF wParam==0
-                                .IF lParam==0
-                                        mov A0,0
-                                        invoke dwtoa,A0, ADDR buffer
-                                        invoke SetWindowText,hE0, ADDR buffer
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T0,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T0
-                                        add A0,eax
-                                        invoke dwtoa,A0, ADDR buffer
-                                        invoke SetWindowText,hE0, ADDR buffer
-                                .ELSEIF lParam==3
-                                        inc A0
-                                        invoke dwtoa,A0, ADDR buffer
-                                        invoke SetWindowText,hE0, ADDR buffer
-                                .ENDIF
-                        .ELSEIF wParam==1
-                                .IF lParam==0
-                                        mov A1,0
-                                        invoke dwtoa,A1, ADDR buffer
-                                        invoke SetWindowText,hE1, ADDR buffer
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T1,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T1
-                                        add A1,eax
-                                        invoke dwtoa,A1, ADDR buffer
-                                        invoke SetWindowText,hE1, ADDR buffer
-                                .ELSEIF lParam==3
-                                        inc A1
-                                        invoke dwtoa,A1, ADDR buffer
-                                        invoke SetWindowText,hE1, ADDR buffer
-                                .ENDIF
-                        .ELSEIF wParam==2
-                                .IF lParam==0
-                                        mov A2,0
-                                        invoke dwtoa,A2, ADDR buffer
-                                        invoke SetWindowText,hE2, ADDR buffer
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T2,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T2
-                                        add A2,eax
-                                        invoke dwtoa,A2, ADDR buffer
-                                        invoke SetWindowText,hE2, ADDR buffer
-                                .ELSEIF lParam==3
-                                        inc A2
-                                        invoke dwtoa,A2, ADDR buffer
-                                        invoke SetWindowText,hE2, ADDR buffer
-                                .ENDIF
-                        .ELSEIF wParam==3
-                                .IF lParam==0
-                                        mov A3,0
-                                        invoke dwtoa,A3, ADDR buffer
-                                        invoke SetWindowText,hE3, ADDR buffer
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T3,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T3
-                                        add A3,eax
-                                        invoke dwtoa,A3, ADDR buffer
-                                        invoke SetWindowText,hE3, ADDR buffer
-                                .ELSEIF lParam==3
-                                        inc A3
-                                        invoke dwtoa,A3, ADDR buffer
-                                        invoke SetWindowText,hE3, ADDR buffer
-                                .ENDIF
-                        .ELSEIF wParam==4
-                                .IF lParam==0
-                                        mov A4,0
-                                        invoke dwtoa,A4, ADDR buffer
-                                        invoke SetWindowText,hE4, ADDR buffer
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T4,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T4
-                                        add A4,eax
-                                        invoke dwtoa,A4, ADDR buffer
-                                        invoke SetWindowText,hE4, ADDR buffer
-                                .ELSEIF lParam==3
-                                        inc A4
-                                        invoke dwtoa,A4, ADDR buffer
-                                        invoke SetWindowText,hE4, ADDR buffer
-                                .ENDIF
-                        .ELSEIF wParam==5
-                                .IF lParam==0
-                                        mov A5,0
-                                        invoke dwtoa,A5, ADDR buffer
-                                        invoke SetWindowText,hE5, ADDR buffer
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T5,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T5
-                                        add A5,eax
-                                        invoke dwtoa,A5, ADDR buffer
-                                        invoke SetWindowText,hE5, ADDR buffer
-                                .ELSEIF lParam==3
-                                        inc A5
-                                        invoke dwtoa,A5, ADDR buffer
-                                        invoke SetWindowText,hE5, ADDR buffer
-                                .ENDIF
-                        .ELSEIF wParam==6
-                                .IF lParam==0
-                                        mov A6,0
-                                        invoke dwtoa,A6, ADDR buffer
-                                        invoke SetWindowText,hE6, ADDR buffer
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T6,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T6
-                                        add A6,eax
-                                        invoke dwtoa,A6, ADDR buffer
-                                        invoke SetWindowText,hE6, ADDR buffer
-                                .ELSEIF lParam==3
-                                        inc A6
-                                        invoke dwtoa,A6, ADDR buffer
-                                        invoke SetWindowText,hE6, ADDR buffer
-                                .ENDIF
-                        .ELSEIF wParam==7
-                                .IF lParam==0
-                                        mov A7,0
-                                        invoke dwtoa,A7, ADDR buffer
-                                        invoke SetWindowText,hE7, ADDR buffer
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T7,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T7
-                                        add A7,eax
-                                        invoke dwtoa,A7, ADDR buffer
-                                        invoke SetWindowText,hE7, ADDR buffer
-                                .ELSEIF lParam==3
-                                        inc A7
-                                        invoke dwtoa,A7, ADDR buffer
-                                        invoke SetWindowText,hE7, ADDR buffer
-                                .ENDIF
-                        .ELSEIF wParam==8
-                                .IF lParam==0
-                                        mov A8,0
-                                        invoke dwtoa,A8, ADDR buffer
-                                        invoke SetWindowText,hE8, ADDR buffer
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T8,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T8
-                                        add A8,eax
-                                        invoke dwtoa,A8, ADDR buffer
-                                        invoke SetWindowText,hE8, ADDR buffer
-                                .ELSEIF lParam==3
-                                        inc A8
-                                        invoke dwtoa,A8, ADDR buffer
-                                        invoke SetWindowText,hE8, ADDR buffer
-                                .ENDIF
-                        .ELSEIF wParam==9
-                                .IF lParam==0
-                                        mov A9,0
-                                        invoke dwtoa,A9, ADDR buffer
-                                        invoke SetWindowText,hE9, ADDR buffer
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T9,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T9
-                                        add A9,eax
-                                        invoke dwtoa,A9, ADDR buffer
-                                        invoke SetWindowText,hE9, ADDR buffer
-                                .ELSEIF lParam==3
-                                        inc A9
-                                        invoke dwtoa,A9, ADDR buffer
-                                        invoke SetWindowText,hE9, ADDR buffer
-                                .ENDIF
-                        .ENDIF
-                .else
-                        .IF wParam==0
-                                .IF lParam==0
-                                        mov A0,0
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T0,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T0
-                                        add A0,eax
-                                .ELSEIF lParam==3
-                                        inc A0
-                                .ENDIF
-                        .ELSEIF wParam==1
-                                .IF lParam==0
-                                        mov A1,0
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T1,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T1
-                                        add A1,eax
-                                .ELSEIF lParam==3
-                                        inc A1
-                                .ENDIF
-                        .ELSEIF wParam==2
-                                .IF lParam==0
-                                        mov A2,0
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T2,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T2
-                                        add A2,eax
-                                .ELSEIF lParam==3
-                                        inc A2
-                                .ENDIF
-                        .ELSEIF wParam==3
-                                .IF lParam==0
-                                        mov A3,0
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T3,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T3
-                                        add A3,eax
-                                .ELSEIF lParam==3
-                                        inc A3
-                                .ENDIF
-                        .ELSEIF wParam==4
-                                .IF lParam==0
-                                        mov A4,0
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T4,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T4
-                                        add A4,eax
-                                .ELSEIF lParam==3
-                                        inc A4
-                                .ENDIF
-                        .ELSEIF wParam==5
-                                .IF lParam==0
-                                        mov A5,0
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T5,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T5
-                                        add A5,eax
-                                .ELSEIF lParam==3
-                                        inc A5
-                                .ENDIF
-                        .ELSEIF wParam==6
-                                .IF lParam==0
-                                        mov A6,0
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T6,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T6
-                                        add A6,eax
-                                .ELSEIF lParam==3
-                                        inc A6
-                                .ENDIF
-                        .ELSEIF wParam==7
-                                .IF lParam==0
-                                        mov A7,0
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T7,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T7
-                                        add A7,eax
-                                .ELSEIF lParam==3
-                                        inc A7
-                                .ENDIF
-                        .ELSEIF wParam==8
-                                .IF lParam==0
-                                        mov A8,0
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T8,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T8
-                                        add A8,eax
-                                .ELSEIF lParam==3
-                                        inc A8
-                                .ENDIF
-                        .ELSEIF wParam==9
-                                .IF lParam==0
-                                        mov A9,0
-                                .ELSEIF lParam==1
-                                        invoke GetTickCount 
-                                        mov T9,eax
-                                .ELSEIF lParam==2
-                                        invoke GetTickCount 
-                                        sub eax,T9
-                                        add A9,eax
-                                .ELSEIF lParam==3
-                                        inc A9
-                                .ENDIF
-                        .ENDIF      
+
+                ; nullify counter
+                .if wParam=='0'
+                        mov esi, offset dCounterValues
+                        mov ecx, i
+                        mov eax, 0
+                        mov [esi + ecx*4], eax
                 .endif
 
-                .if do_realtime_print==1
-                        .if wParam==10
-                                mov eax,lParam
-                                mov A0,eax
-                                invoke dwtoa,A0, ADDR buffer
-                                invoke SetWindowText,hE0, ADDR buffer
-                        .elseif wParam==11
-                                mov eax,lParam
-                                mov A1,eax
-                                invoke dwtoa,A1, ADDR buffer
-                                invoke SetWindowText,hE1, ADDR buffer
-                        .elseif wParam==12
-                                mov eax,lParam
-                                mov A2,eax
-                                invoke dwtoa,A2, ADDR buffer
-                                invoke SetWindowText,hE2, ADDR buffer
-                        .elseif wParam==13
-                                mov eax,lParam
-                                mov A3,eax
-                                invoke dwtoa,A3, ADDR buffer
-                                invoke SetWindowText,hE3, ADDR buffer
-                        .elseif wParam==14
-                                mov eax,lParam
-                                mov A4,eax
-                                invoke dwtoa,A4, ADDR buffer
-                                invoke SetWindowText,hE4, ADDR buffer
-                        .elseif wParam==15
-                                mov eax,lParam
-                                mov A5,eax
-                                invoke dwtoa,A5, ADDR buffer
-                                invoke SetWindowText,hE5, ADDR buffer
-                        .elseif wParam==16
-                                mov eax,lParam
-                                mov A6,eax
-                                invoke dwtoa,A6, ADDR buffer
-                                invoke SetWindowText,hE6, ADDR buffer
-                        .elseif wParam==17
-                                mov eax,lParam
-                                mov A7,eax
-                                invoke dwtoa,A7, ADDR buffer
-                                invoke SetWindowText,hE7, ADDR buffer
-                        .elseif wParam==18
-                                mov eax,lParam
-                                mov A8,eax
-                                invoke dwtoa,A8, ADDR buffer
-                                invoke SetWindowText,hE8, ADDR buffer
-                        .elseif wParam==19
-                                mov eax,lParam
-                                mov A9,eax
-                                invoke dwtoa,A9, ADDR buffer
-                                invoke SetWindowText,hE9, ADDR buffer
-                        .endif
-                .else
-                        .if wParam==10
-                                mov eax,lParam
-                                mov A0,eax
-                        .elseif wParam==11
-                                mov eax,lParam
-                                mov A1,eax
-                        .elseif wParam==12
-                                mov eax,lParam
-                                mov A2,eax
-                        .elseif wParam==13
-                                mov eax,lParam
-                                mov A3,eax
-                        .elseif wParam==14
-                                mov eax,lParam
-                                mov A4,eax
-                        .elseif wParam==15
-                                mov eax,lParam
-                                mov A5,eax
-                        .elseif wParam==16
-                                mov eax,lParam
-                                mov A6,eax
-                        .elseif wParam==17
-                                mov eax,lParam
-                                mov A7,eax
-                        .elseif wParam==18
-                                mov eax,lParam
-                                mov A8,eax
-                        .elseif wParam==19
-                                mov eax,lParam
-                                mov A9,eax
-                        .endif
+                ; start timing
+                .if wParam=='T'
+                        invoke GetTickCount 
+                        mov esi, offset dCounterTimers
+                        mov ecx, i
+                        mov [esi + ecx*4], eax
                 .endif
+
+                ; stop timing
+                .if wParam=='S'
+                        invoke GetTickCount 
+                        mov esi, offset dCounterTimers
+                        mov ecx, i
+                        sub eax, [esi + ecx*4]
+                        mov esi, offset dCounterValues
+                        mov [esi + ecx*4], eax
+                .endif
+
+                ; increment counter
+                .if wParam=='I'
+                        mov esi, offset dCounterValues
+                        mov ecx, i
+                        mov eax, [esi + ecx*4]
+                        inc eax
+                        mov [esi + ecx*4], eax
+                .endif
+
+                ; decrement counter
+                .if wParam=='D'
+                        mov esi, offset dCounterValues
+                        mov ecx, i
+                        mov eax, [esi + ecx*4]
+                        dec eax
+                        mov [esi + ecx*4], eax
+                .endif
+
+                ; update counters
+                .if do_realtime_print==1
+                        mov esi, offset dCounterValues
+                        mov ecx, i
+                        invoke dwtoa, [esi + ecx*4], addr buffer
+                        mov esi, offset hCounters
+                        mov ecx, i
+                        invoke SetWindowText, [esi + ecx*4], addr buffer
+                .endif
+
+        ; Reacting on button
         .ELSEIF uMsg==WM_COMMAND
                 mov eax,wParam
                 .IF ax==eB
