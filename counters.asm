@@ -36,7 +36,7 @@ eB0 equ 15
 eB1 equ 16
 eBW equ 17
 eBF equ 18
-eB4 equ 19
+eRealtimePrint equ 19
 eButton equ 21
 eBC equ 22
 MAXSIZE equ 260
@@ -76,7 +76,7 @@ sB0 db "0",0
 sB1 db "N",0
 sBW db "W",0
 sBF db "F",0
-sB4 db "Realtime print",0
+sRealtimePrint db "Realtime print",0
 sBC db "C",0
 
 s03 db "0-3", 0
@@ -140,7 +140,7 @@ hB0 HWND ?
 hB1 HWND ?
 hBW HWND ?
 hBF HWND ?
-hB4 HWND ?
+hRealtimePrint HWND ?
 hBC HWND ?
 hS0 HWND ?
 hS5 HWND ?
@@ -160,7 +160,7 @@ hFile HANDLE ?
 hMemory HANDLE ?
 pMemory DWORD ?
 SizeReadWrite DWORD ?
-rtflag db ?
+do_realtime_print db ?
 fqTemp QWORD ?
 
 
@@ -196,7 +196,7 @@ WinMain proc hInst:HINSTANCE,hPrevInst:HINSTANCE,CmdLine:LPSTR,CmdShow:DWORD
         invoke RegisterClassEx, addr wc
         invoke CreateWindowEx,WS_EX_LEFT, ADDR ClassName, ADDR AppName,\
                 WS_OVERLAPPEDWINDOW - WS_MAXIMIZEBOX,CW_USEDEFAULT,\
-                CW_USEDEFAULT,450, 220,NULL,NULL,\
+                CW_USEDEFAULT, 420, 160, NULL, NULL,\
                 hInst,NULL
         mov hwnd,eax
         invoke ShowWindow, hwnd,SW_SHOWNORMAL
@@ -228,18 +228,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         .ELSEIF uMsg==WM_CREATE
                 invoke dwtoa, hWnd, ADDR sHWND
                 invoke SetWindowText,hWnd, ADDR sHWND
-
-                ; write window handler to clipboard
-                invoke OpenClipboard,0
-                invoke EmptyClipboard
-                invoke GlobalAlloc,GMEM_MOVEABLE or GMEM_DDESHARE,32
-                mov hand,eax
-                invoke GlobalLock,hand
-                mov addre,eax
-                invoke lstrcpy,addre, ADDR sHWND
-                invoke GlobalUnlock,hand
-                invoke SetClipboardData,CF_TEXT,hand
-                invoke CloseClipboard
 
                 ; set initial window position  
                 invoke GetDesktopWindow
@@ -292,37 +280,37 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                 ; buttons
                 invoke CreateWindowEx, NULL, ADDR ButtonClassName, ADDR sB0,\
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON,\
-                        1, 1, 21, 21, hWnd, eB0, hInstance, NULL
+                        2, 2, 21, 21, hWnd, eB0, hInstance, NULL
                 mov hB0, eax
 
                 invoke CreateWindowEx, NULL, ADDR ButtonClassName, ADDR sBW,\
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON,\
-                        23, 1, 21, 21, hWnd, eBW, hInstance, NULL
+                        24, 2, 21, 21, hWnd, eBW, hInstance, NULL
                 mov hBW, eax
 
                 invoke CreateWindowEx, NULL, ADDR ButtonClassName, ADDR sBF,\
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON,\
-                        45, 1, 21, 21, hWnd, eBF, hInstance, NULL
+                        46, 2, 21, 21, hWnd, eBF, hInstance, NULL
                 mov hBF, eax
 
                 invoke CreateWindowEx,NULL, ADDR ButtonClassName, ADDR sBC,\
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON,\
-                        67, 1, 21, 21, hWnd, eBC, hInstance, NULL
+                        68, 2, 21, 21, hWnd, eBC, hInstance, NULL
                 mov hBC, eax
 
                 ; check box
-                invoke CreateWindowEx,NULL, ADDR ButtonClassName, ADDR sB4,\
+                invoke CreateWindowEx,NULL, ADDR ButtonClassName, ADDR sRealtimePrint,\
                         WS_CHILD or WS_VISIBLE or BS_AUTOCHECKBOX ,\
-                        0,167,115,21,hWnd,eB4,hInstance,NULL
-                mov hB4,eax
+                        93, 2, 115, 21, hWnd, eRealtimePrint, hInstance, NULL
+                mov hRealtimePrint, eax
                 
-                invoke SendMessage,hB4,BM_SETCHECK,1,0
-                mov rtflag, 1
+                invoke SendMessage, hRealtimePrint, BM_SETCHECK, 1, 0
+                mov do_realtime_print, 1
 
                 ; button button
                 invoke CreateWindowEx,NULL, ADDR ButtonClassName, ADDR ButtonClassName,\
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON,\
-                        115,167,84,21,hWnd,eButton,hInstance,NULL
+                        208, 2, 84, 21, hWnd, eButton, hInstance, NULL
                 mov hButton,eax
 
         ; Reacting on messages
@@ -336,7 +324,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         invoke timeBeginPeriod,lParam
                         ret
                 .endif
-                .if rtflag==1
+                .if do_realtime_print==1
                         .IF wParam==0
                                 .IF lParam==0
                                         mov A0,0
@@ -662,7 +650,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         .ENDIF      
                 .endif
 
-                .if rtflag==1
+                .if do_realtime_print==1
                         .if wParam==10
                                 mov eax,lParam
                                 mov A0,eax
@@ -1085,11 +1073,11 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                                 invoke _lwrite,hFile, ADDR text,eax
                                 invoke CloseHandle,hFile
                         .endif
-                .ELSEIF ax==eB4
-                        .IF rtflag==1 
-                                mov rtflag,0
+                .ELSEIF ax==eRealtimePrint
+                        .IF do_realtime_print==1 
+                                mov do_realtime_print, 0
                         .ELSE
-                                mov rtflag,1
+                                mov do_realtime_print, 1
                         .ENDIF
                 .ELSEIF ax==eBC
                         invoke lstrcpy, ADDR buffer, ADDR sCLeft
