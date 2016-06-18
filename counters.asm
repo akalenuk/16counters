@@ -1,5 +1,5 @@
 .386
-.model flat,stdcall
+.model flat, stdcall
 option casemap:none
 WinMain proto :DWORD,:DWORD,:DWORD,:DWORD
 include \masm32\include\windows.inc
@@ -18,109 +18,71 @@ includelib \masm32\lib\kernel32.lib
 includelib \masm32\lib\comdlg32.lib
 
 .const
-eE0 equ 7
-eE1 equ 5
-eE2 equ 6
-eE3 equ 7
-eE4 equ 5
-eE5 equ 6
-eE6 equ 7
-eE7 equ 8
-eE8 equ 9
-eE9 equ 10
-eE10 equ 11
-eS0 equ 12
-eS5 equ 13
+; 0-15 reserved for counters
+; buttons
 eB0 equ 100
 eBN equ 101
 eBW equ 102
-eBF equ 103
-eRealtimePrint equ 19
-eButton equ 21
-eBC equ 22
-MAXSIZE equ 260
-MEMSIZE equ 65536
+eBC equ 103
+eBF equ 104
+; checkbox
+eRealtimePrint equ 110
+; 'button'
+eButton equ 120
+; labels
+eL03 equ 130
+eL47 equ 131
+eL8B equ 132
+eLCF equ 133
 
+MAX_FILE_SIZE equ 260
 MAX_COUNTERS equ 16
 
 .data 
+; mandatories
 ClassName db "SimpleWinClass",0
 AppName  db " ",0
 MenuName db "NoMenu",0
 ButtonClassName db "button",0
 StaticClassName db "static",0
 EditClassName db "edit",0
+
+; dialogs
 sProgramWindowHandler db "Program window handler: ",0
 sCopyToClipboard db "Copy to clipboard?",0
-sProfileResults db "Shpion report:",0
-sNone db 0
-sEOL db 13,10,0
-sSp db 9,0
-sDash db "-",0
-s0 db " 0:",0
-s1 db " 1:",0
-s2 db " 2:",0
-s3 db " 3:",0
-s4 db " 4:",0
-s5 db " 5:",0
-s6 db " 6:",0
-s7 db " 7:",0
-s8 db " 8:",0
-s9 db " 9:",0
-s10 db "10: ",0
-s100 db "100",0
-sA db "0",0
-sB db "%",0
-sB0 db "0",0
-sBN db "N",0
-sBW db "W",0
-sBF db "F",0
-sRealtimePrint db "Realtime print",0
-sBC db "C",0
+sProfileResults db "Counters report:",0
 
+; buttons
+sB0 db "0", 0
+sBN db "N", 0
+sBW db "W", 0
+sBC db "C", 0
+sBF db "F", 0
+
+; checkbox
+sRealtimePrint db "Realtime print",0
+
+; labels
 s03 db "0-3", 0
 s47 db "4-7", 0
 s8B db "8-B", 0
 sCF db "C-F", 0
+
+; layout
+sEOL db 13,10,0
+sTab db 9,0
+sDash db "-",0
 sZero db "0", 0
 sColon db ":", 0
-sSpace db " ", 0
-
-cT DWORD 0
-T0 DWORD 0
-T1 DWORD 0
-T2 DWORD 0
-T3 DWORD 0
-T4 DWORD 0
-T5 DWORD 0
-T6 DWORD 0
-T7 DWORD 0
-T8 DWORD 0
-T9 DWORD 0
-T10 DWORD 0
-cA DWORD 0
-A0 DWORD 0
-A1 DWORD 0
-A2 DWORD 0
-A3 DWORD 0
-A4 DWORD 0
-A5 DWORD 0
-A6 DWORD 0
-A7 DWORD 0
-A8 DWORD 0
-A9 DWORD 0
-A10 DWORD 0
-q100 QWORD 100.0
 
 ofn OPENFILENAME <>
 
-FilterString    db "Shpion reports",0,"*.shr",0 
-                                db "All Files",0,"*.*",0,0
-sLog db ".shr",0
+FilterString db "Counters reports", 0, "*.counters", 0, "All Files", 0, "*.*", 0, 0
+sExtension db ".counters",0
 Button_count DWORD 0
 
 sCLeft  db "SendMessage((HWND)",0
-sCRight db ",WM_USER,,);",0
+sCRight db ", WM_USER, 'I', 0);",0
 
 .data?
 chE HWND ?
@@ -257,7 +219,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         add eax, 42
                         mov x, eax
                                                 
-                        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR EditClassName, ADDR sA,\
+                        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR EditClassName, ADDR sZero,\
                                 WS_CHILD or WS_VISIBLE or ES_LEFT or ES_AUTOHSCROLL,\
                                 x, y, 84, 18, hWnd, i, hInstance, NULL
                         mov esi, offset hCounters
@@ -269,16 +231,16 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                 ; labels
                 invoke CreateWindowEx, NULL, ADDR StaticClassName, ADDR s03,\
                         WS_CHILD or WS_VISIBLE,\
-                        15, 32, 25, 20, hWnd, eS0, hInstance, NULL
+                        15, 32, 25, 20, hWnd, eL03, hInstance, NULL
                 invoke CreateWindowEx, NULL, ADDR StaticClassName, ADDR s47,\
                         WS_CHILD or WS_VISIBLE,\
-                        15, 54, 25, 20, hWnd, eS0, hInstance, NULL
+                        15, 54, 25, 20, hWnd, eL47, hInstance, NULL
                 invoke CreateWindowEx, NULL, ADDR StaticClassName, ADDR s8B,\
                         WS_CHILD or WS_VISIBLE,\
-                        15, 76, 25, 20, hWnd, eS0, hInstance, NULL
+                        15, 76, 25, 20, hWnd, eL8B, hInstance, NULL
                 invoke CreateWindowEx, NULL, ADDR StaticClassName, ADDR sCF,\
                         WS_CHILD or WS_VISIBLE,\
-                        15, 98, 25, 20, hWnd, eS0, hInstance, NULL
+                        15, 98, 25, 20, hWnd, eLCF, hInstance, NULL
 
                 ; buttons
                 invoke CreateWindowEx, NULL, ADDR ButtonClassName, ADDR sB0,\
@@ -469,7 +431,8 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                                 invoke GlobalUnlock,hand
                                 invoke SetClipboardData,CF_TEXT,hand
                                 invoke CloseClipboard
-                        .ENDIF   
+                        .ENDIF
+                ; Save report fo file
                 .ELSEIF ax==eBF
                         mov text[0],0
                         invoke GetSystemTime,addr syst
@@ -487,12 +450,12 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         mov ax,syst.wYear
                         invoke dwtoa,eax,addr buffer
                         invoke szCatStr,addr text, addr buffer
-                        invoke szCatStr,addr text, addr sSp
+                        invoke szCatStr,addr text, addr sTab
                         xor eax,eax
                         mov ax,syst.wHour
                         invoke dwtoa,eax,addr buffer
                         invoke szCatStr,addr text, addr buffer
-                        invoke szCatStr,addr text,addr sDash
+                        invoke szCatStr,addr text,addr sColon
                         xor eax,eax
                         mov ax,syst.wMinute
                         invoke dwtoa,eax,addr buffer
@@ -508,7 +471,8 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                                 invoke dwtoa, i, addr buffer
                                 invoke szCatStr, ADDR text, ADDR buffer
                                 invoke szCatStr, ADDR text, ADDR sColon
-                                invoke szCatStr, ADDR text, ADDR sSpace
+                                invoke szCatStr, ADDR text, ADDR sTab
+                                ; value
                                 mov esi, offset hCounters
                                 mov ecx, i
                                 invoke GetWindowText, [esi + ecx*4], addr buffer, 512
@@ -525,12 +489,12 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         pop ofn.hInstance
                         mov ofn.lpstrFilter, OFFSET FilterString
                         mov ofn.lpstrFile, OFFSET buffer
-                        mov ofn.nMaxFile,MAXSIZE
+                        mov ofn.nMaxFile, MAX_FILE_SIZE
                         mov buffer[0],0
                         mov ofn.Flags,OFN_LONGNAMES or OFN_EXPLORER or OFN_HIDEREADONLY
                         invoke GetSaveFileName, ADDR ofn
                         .if eax==TRUE
-                                invoke szCatStr, ADDR buffer, ADDR sLog
+                                invoke szCatStr, ADDR buffer, ADDR sExtension
                                 invoke CreateFile, ADDR buffer,\
                                         GENERIC_READ or GENERIC_WRITE ,\
                                         FILE_SHARE_READ or FILE_SHARE_WRITE,\
