@@ -302,7 +302,15 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                 ; return 'button' click count
                 .if wParam=='B'
                         mov eax, button_count
-                        sub button_count, eax
+                        mov button_count, 0
+                        ret
+                .endif
+
+                ; returns counter value
+                .if wParam=='R'
+                        mov esi, offset counter_values
+                        mov ecx, i
+                        mov eax, [esi + ecx*4]
                         ret
                 .endif
 
