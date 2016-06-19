@@ -39,7 +39,8 @@ eL47 equ 131
 eL8B equ 132
 eLCF equ 133
 
-MAX_FILE_SIZE equ 260
+; limits
+MAX_FILE_NAME_SIZE equ 260
 MAX_COUNTERS equ 16
 
 .data 
@@ -297,71 +298,56 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         mov ecx, i
                         mov eax, lParam
                         mov [esi + ecx*4], eax
-                .endif
-
-                ; return 'button' click count
-                .if wParam=='B'
-                        mov eax, button_count
-                        mov button_count, 0
-                        ret
-                .endif
-
-                ; returns counter value
-                .if wParam=='R'
+                ; increment counter
+                .elseif wParam=='I'
                         mov esi, offset counter_values
                         mov ecx, i
                         mov eax, [esi + ecx*4]
-                        ret
-                .endif
-
-                ; set default thread quant (might not work properly on newer Windows)
-                .if wParam=='Q'
-                        invoke timeBeginPeriod, lParam
-                        ret
-                .endif
-
+                        inc eax
+                        mov [esi + ecx*4], eax
+                ; decrement counter
+                .elseif wParam=='D'
+                        mov esi, offset counter_values
+                        mov ecx, i
+                        mov eax, [esi + ecx*4]
+                        dec eax
+                        mov [esi + ecx*4], eax
                 ; nullify counter
-                .if wParam=='0'
+                .elseif wParam=='0'
                         mov esi, offset counter_values
                         mov ecx, i
                         mov eax, 0
                         mov [esi + ecx*4], eax
-                .endif
-
                 ; start timing
-                .if wParam=='T'
+                .elseif wParam=='T'
                         invoke GetTickCount 
                         mov esi, offset counter_timers
                         mov ecx, i
                         mov [esi + ecx*4], eax
-                .endif
-
+                        ret
                 ; stop timing
-                .if wParam=='S'
+                .elseif wParam=='S'
                         invoke GetTickCount 
                         mov esi, offset counter_timers
                         mov ecx, i
                         sub eax, [esi + ecx*4]
                         mov esi, offset counter_values
                         mov [esi + ecx*4], eax
-                .endif
-
-                ; increment counter
-                .if wParam=='I'
+                ; return 'button' click count
+                .elseif wParam=='B'
+                        mov eax, button_count
+                        mov button_count, 0
+                        ret
+                ; returns counter value
+                .elseif wParam=='R'
                         mov esi, offset counter_values
                         mov ecx, i
                         mov eax, [esi + ecx*4]
-                        inc eax
-                        mov [esi + ecx*4], eax
-                .endif
-
-                ; decrement counter
-                .if wParam=='D'
-                        mov esi, offset counter_values
-                        mov ecx, i
-                        mov eax, [esi + ecx*4]
-                        dec eax
-                        mov [esi + ecx*4], eax
+                        ret
+                ; set default thread quant (might not work properly on newer Windows)
+                .elseif wParam=='Q'
+                        invoke timeBeginPeriod, lParam
+                        ret
                 .endif
 
                 ; update counters
@@ -505,7 +491,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         pop ofn.hInstance
                         mov ofn.lpstrFilter, offset sFileFilter
                         mov ofn.lpstrFile, offset TextBuffer
-                        mov ofn.nMaxFile, MAX_FILE_SIZE
+                        mov ofn.nMaxFile, MAX_FILE_NAME_SIZE
                         mov TextBuffer[0], 0
                         mov ofn.Flags, OFN_LONGNAMES or OFN_EXPLORER or OFN_HIDEREADONLY
                         invoke GetSaveFileName, addr ofn
