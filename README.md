@@ -58,3 +58,7 @@ It returns 1 or more if a `button` was pressed, and then resets its state. This 
 * `[F]` button saves counters to a file.
 * `[v] Realtime print` is a checkbox which sets automatic counter updates on and off. It is convenient to have it always `on`, but is also affects perforance, so this is optional.
 * `[button]` button counts when you press it so you can read if it has been pressed via messaging afterwards.
+
+## Executable
+
+If you don't want to get into MASM32 thing, here's prebuilt exe: https://dl.dropboxusercontent.com/u/25247809/exe/counters.exe
