@@ -5,7 +5,7 @@ Debug counters with Windows messaging IPC interface.
 
 This is a tool to support several simple debugging techniques. It accepts integer data from debugged program to display it on screen just as program goes. When you send messages from debugged program, this tool handles them immediately so, unlike with conventional debuggers and profilers, you can observe how your program works in realtime.
 
-##Interface
+## Interface
 
 It uses native Windows messaging for communication with all its limitations and advantages. It is actually language invariant, but I'll show all examples in C.
 
@@ -49,7 +49,7 @@ At this point you might be wondering, what the `button` button for? It is actual
 
 It returns 1 or more if a `button` was pressed, and then resets its state. This way you can use it as some kind of a trigger in your debug session. I know it looks a bit silly, but it actually helps a lot.
 
-##GUI
+## GUI
 
 * `[0]` button nullifies all counters.
 * `[N]` button updates counters when `Realtime print` is off.
