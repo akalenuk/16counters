@@ -1,9 +1,11 @@
 # counters
-A piece of UI to borrow. 16 counters with Windows messaging IPC interface.
+This is a piece of UI to borrow. 16 counters you can write things to with Windows native messaging interface. 
+
+The interface is ancient but, on the plus side, it's universally availabe across languages.
 
 ![screenshot](/screenshot.png "GUI")
 
-This is a tool for several simple debugging techniques. It accepts data from the debugged program and displays it immediately on the screen. When you send messages from the debugged program, this tool handles them synchronously, so it slows down the sending program, but you still can watch it run in real-time.
+It's meant to assist in debugging. When you send messages from the debugged program, the counters handle them synchronously. It slows down the sending program a bit but you still can watch the data while it runs in real-time.
 
 ## Interface
 
@@ -13,7 +15,7 @@ To send an integer number to some counter, use this:
 
     SendMessage((HWND)655890, WM_USER, i, n);
 
-Here `i` is a counter index and `n` is the number you want to see in it. 655890 - is the handle of a counter's window. It is written on top of it and also accessible via the clipboard. Just click the "W" button to copy the handler, or "C" button to copy a whole SendMessage string.
+Here `i` is a counter index and `n` is the number you want to see in it. 655890 - is the handle of a counter's window. It is written on top of it, and it unique for every instance. It's also accessible via the clipboard. Just click the "W" button to copy the handler, or "C" button to copy a whole SendMessage string.
 
 To increment a counter use this:
 
@@ -31,17 +33,17 @@ And nullify counter with this:
     
 Please note, that `0` here is a character, not a number. Sending 0 would just set 0-counter to `i`.
 
-You can read value back, although only if it has been set with messages before, not by hand. And it affects performance, so it's generally best not to rely heavily on it.
+You can read a value from the counter back, although, only if it has been set with messages, not by hand. And it affects performance, so it's generally best not to rely heavily on it.
 
     v = SendMessage((HWND)655890, WM_USER, 'R', i);
 
-You can also use primitive time counter:
+You can also use a primitive time counter:
 
     SendMessage((HWND)655890, WM_USER, 'T', i);
     ... some workflow long enough to be measured in process quant time slices...
     SendMessage((HWND)655890, WM_USER, 'S', i);
 
-Sending `T` starts the corresponding timer, sending `S` stops it and displays elapsed time in milliseconds. 
+Sending `T` starts the corresponding timer. Sending `S` stops it and displays elapsed time in milliseconds. 
 
 At this point, you might be wondering, what the `button` button for? It is actually a button you can "outsource" from the debugged program. It works like this. When you send a `B` command,
 
