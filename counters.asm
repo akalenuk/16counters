@@ -57,7 +57,7 @@ sBC db "C", 0
 sBT db "T", 0
 
 ; checkbox
-sRealtimePrint db "Realtime print", 0
+sRealtimePrint db "realtime", 0
 
 ; labels
 s03 db "0-3", 0
@@ -73,7 +73,6 @@ sZero db "0", 0
 sColon db ":", 0
 
 ; program handler dialog
-sProgramWindowHandler db "Program window handler: ", 0
 sCopyToClipboard db "Copy to clipboard?", 0
 
 ; file saving dialog
@@ -236,33 +235,33 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                 ; buttons
                 invoke CreateWindowEx, NULL, addr ButtonClassName, addr sB0, \
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON, \
-                        2, 2, 21, 21, hWnd, eB0, hInstance, NULL
+                        42, 6, 21, 21, hWnd, eB0, hInstance, NULL
                 mov hB0, eax
 
                 invoke CreateWindowEx, NULL, addr ButtonClassName, addr sBN, \
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON, \
-                        24, 2, 21, 21, hWnd, eBN, hInstance, NULL
+                        64, 6, 21, 21, hWnd, eBN, hInstance, NULL
                 mov hBN, eax
 
                 invoke CreateWindowEx, NULL, addr ButtonClassName, addr sBW, \
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON, \
-                        46, 2, 21, 21, hWnd, eBW, hInstance, NULL
+                        166, 2, 21, 21, hWnd, eBW, hInstance, NULL
                 mov hBW, eax
 
                 invoke CreateWindowEx, NULL, addr ButtonClassName, addr sBC, \
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON, \
-                        68, 2, 21, 21, hWnd, eBC, hInstance, NULL
+                        188, 2, 21, 21, hWnd, eBC, hInstance, NULL
                 mov hBC, eax
 
                 invoke CreateWindowEx, NULL, addr ButtonClassName, addr sBT, \
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON, \
-                        90, 2, 21, 21, hWnd, eBT, hInstance, NULL
+                        210, 6, 21, 21, hWnd, eBT, hInstance, NULL
                 mov hBT, eax
 
                 ; check box
                 invoke CreateWindowEx, NULL, addr ButtonClassName, addr sRealtimePrint, \
                         WS_CHILD or WS_VISIBLE or BS_AUTOCHECKBOX , \
-                        115, 2, 115, 21, hWnd, eRealtimePrint, hInstance, NULL
+                        88, 6, 72, 21, hWnd, eRealtimePrint, hInstance, NULL
                 mov hRealtimePrint, eax
                 
                 invoke SendMessage, hRealtimePrint, BM_SETCHECK, 1, 0
@@ -381,10 +380,8 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
                 ; copy the handler to clipboard
                 .elseif ax==eBW 
-                        invoke lstrcpy, addr TextBuffer, addr sProgramWindowHandler
                         invoke dwtoa, hWnd, addr SmallerBuffer
-                        invoke szCatStr, addr TextBuffer, addr SmallerBuffer
-                        invoke MessageBox, 0, addr TextBuffer, addr sCopyToClipboard, MB_YESNO
+                        invoke MessageBox, 0, addr SmallerBuffer, addr sCopyToClipboard, MB_YESNO
                         .if eax==IDYES
                                 invoke OpenClipboard, 0
                                 invoke EmptyClipboard
