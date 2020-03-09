@@ -340,10 +340,13 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         ret
                 ; returns counter value
                 .elseif wParam=='R'
+                        mov esi, offset hCounterHandlers
+                        mov ecx, i
+                        invoke GetWindowText, [esi + ecx*4], addr TextBuffer, 12
+                        invoke atodw, addr TextBuffer
                         mov esi, offset counter_values
                         mov ecx, i
-                        mov eax, [esi + ecx*4]
-                        ret
+                        mov [esi + ecx*4], eax
                 ; set default thread quant (might not work properly on newer Windows)
                 .elseif wParam=='Q'
                         invoke timeBeginPeriod, lParam
