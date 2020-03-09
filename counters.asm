@@ -30,9 +30,6 @@ eBF equ 104
 ; checkbox
 eRealtimePrint equ 110
 
-; 'button'
-eButton equ 120
-
 ; labels
 eL03 equ 130
 eL47 equ 131
@@ -84,7 +81,6 @@ ofn OPENFILENAME <>
 sFileFilter db "Counters reports", 0, "*.counters", 0, "All Files", 0, "*.*", 0, 0
 sExtension db ".counters", 0
 sProfileResults db "Counters report:", 0
-button_count DWORD 0
 
 ; C-style send message dialog
 sCLeft  db "SendMessage((HWND)", 0
@@ -107,9 +103,6 @@ hBF HWND ?
 
 ; checkbox
 hRealtimePrint HWND ?
-
-; 'button'
-hButton HWND ?
 
 ; counter handlers
 hCounterHandlers HWND 16 dup(?)
@@ -275,11 +268,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                 invoke SendMessage, hRealtimePrint, BM_SETCHECK, 1, 0
                 mov do_realtime_print, 1
 
-                ; button button
-                invoke CreateWindowEx, NULL, addr ButtonClassName, addr ButtonClassName, \
-                        WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON, \
-                        230, 2, 84, 21, hWnd, eButton, hInstance, NULL
-                mov hButton, eax
 
         ; Reacting on messages
         .elseif uMsg==WM_USER
@@ -297,6 +285,15 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         mov esi, offset counter_values
                         mov ecx, i
                         mov eax, lParam
+                        mov [esi + ecx*4], eax
+                        ; returns counter value
+                .elseif wParam=='R'
+                        mov esi, offset hCounterHandlers
+                        mov ecx, i
+                        invoke GetWindowText, [esi + ecx*4], addr TextBuffer, 12
+                        invoke atodw, addr TextBuffer
+                        mov esi, offset counter_values
+                        mov ecx, i
                         mov [esi + ecx*4], eax
                 ; increment counter
                 .elseif wParam=='I'
@@ -332,20 +329,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         mov ecx, i
                         sub eax, [esi + ecx*4]
                         mov esi, offset counter_values
-                        mov [esi + ecx*4], eax
-                ; return 'button' click count
-                .elseif wParam=='B'
-                        mov eax, button_count
-                        mov button_count, 0
-                        ret
-                ; returns counter value
-                .elseif wParam=='R'
-                        mov esi, offset hCounterHandlers
-                        mov ecx, i
-                        invoke GetWindowText, [esi + ecx*4], addr TextBuffer, 12
-                        invoke atodw, addr TextBuffer
-                        mov esi, offset counter_values
-                        mov ecx, i
                         mov [esi + ecx*4], eax
                 ; set default thread quant (might not work properly on newer Windows)
                 .elseif wParam=='Q'
@@ -517,10 +500,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         .else
                                 mov do_realtime_print, 1
                         .endif 
-                
-                ; 'button' counter increment
-                .elseif ax==eButton
-                        inc button_count
+  
                 .endif
         .else
                 invoke DefWindowProc, hWnd, uMsg, wParam, lParam
