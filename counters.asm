@@ -68,18 +68,10 @@ sCF db "C-F", 0
 ; layout
 sEOL db 13, 10, 0
 sTab db 9, 0
-sDash db "-", 0
 sZero db "0", 0
-sColon db ":", 0
 
 ; program handler dialog
 sCopyToClipboard db "Copy to clipboard?", 0
-
-; file saving dialog
-ofn OPENFILENAME <>
-sFileFilter db "Counters reports", 0, "*.counters", 0, "All Files", 0, "*.*", 0, 0
-sExtension db ".counters", 0
-sProfileResults db "Counters report:", 0
 
 ; C-style send message dialog
 sCLeft  db "SendMessage((HWND)", 0
