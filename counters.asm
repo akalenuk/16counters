@@ -111,14 +111,11 @@ counter_timers DWORD 16 dup(?)
 ; text buffers
 TextBuffer db 512 dup(?)
 SmallerBuffer db 16 dup(?)
-ReportBuffer db 65536 dup(?)
+LargerBuffer db 65536 dup(?)
 
 ; clipboard
 ClipboardMemoryHandler DWORD ?
 ClipboardMemoryAddress DWORD ?
-
-; reporting
-hFile HANDLE ?
 
 .code
 start:
@@ -415,79 +412,40 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                                 invoke CloseClipboard
                         .endif
 
-                ; save report to file
+                ; save counters to clipboard
                 .elseif ax==eBT
-                        mov ReportBuffer[0], 0
-                        invoke GetSystemTime, addr syst
-                        xor eax, eax
-                        ; date
-                        mov ax, syst.wDay
-                        invoke dwtoa, eax, addr TextBuffer
-                        invoke szCatStr, addr ReportBuffer, addr TextBuffer
-                        invoke szCatStr, addr ReportBuffer, addr sDash
-                        xor eax, eax
-                        mov ax, syst.wMonth
-                        invoke dwtoa, eax, addr TextBuffer
-                        invoke szCatStr, addr ReportBuffer, addr TextBuffer
-                        invoke szCatStr, addr ReportBuffer, addr sDash
-                        xor eax, eax
-                        mov ax, syst.wYear
-                        invoke dwtoa, eax, addr TextBuffer
-                        invoke szCatStr, addr ReportBuffer, addr TextBuffer
-                        invoke szCatStr, addr ReportBuffer, addr sTab                
-                        xor eax, eax
-                        ; time
-                        mov ax, syst.wHour
-                        invoke dwtoa, eax, addr TextBuffer
-                        invoke szCatStr, addr ReportBuffer, addr TextBuffer
-                        invoke szCatStr, addr ReportBuffer, addr sColon
-                        xor eax, eax
-                        mov ax, syst.wMinute
-                        invoke dwtoa, eax, addr TextBuffer
-                        invoke szCatStr, addr ReportBuffer, addr TextBuffer
-                        invoke szCatStr, addr ReportBuffer, addr sEOL
-                        invoke szCatStr, addr ReportBuffer, addr sProfileResults
-                        invoke szCatStr, addr ReportBuffer, addr sEOL
-                        invoke szCatStr, addr ReportBuffer, addr sEOL
-                        
+                        mov LargerBuffer[0], 0
                         mov i, 0
                         .repeat
-                                ; index
-                                invoke dwtoa, i, addr TextBuffer
-                                invoke szCatStr, addr ReportBuffer, addr TextBuffer
-                                invoke szCatStr, addr ReportBuffer, addr sColon
-                                invoke szCatStr, addr ReportBuffer, addr sTab
                                 ; value
                                 mov esi, offset hCounterHandlers
                                 mov ecx, i
                                 invoke GetWindowText, [esi + ecx*4], addr TextBuffer, 512
-                                invoke szCatStr, addr ReportBuffer, addr TextBuffer
-                                invoke szCatStr, addr ReportBuffer, addr sEOL
+                                invoke szCatStr, addr LargerBuffer, addr TextBuffer
+                                .if i == 3
+                                    invoke szCatStr, addr LargerBuffer, addr sEOL
+                                .elseif i == 7
+                                    invoke szCatStr, addr LargerBuffer, addr sEOL
+                                .elseif i == 11
+                                    invoke szCatStr, addr LargerBuffer, addr sEOL
+                                .else
+                                    invoke szCatStr, addr LargerBuffer, addr sTab
+                                .endif                            
                                 inc i
                         .until i==MAX_COUNTERS
 
-                        invoke RtlZeroMemory, addr ofn, sizeof ofn
-                        mov ofn.lStructSize, SIZEOF ofn
-                        push hWnd
-                        pop ofn.hWndOwner
-                        push hInstance
-                        pop ofn.hInstance
-                        mov ofn.lpstrFilter, offset sFileFilter
-                        mov ofn.lpstrFile, offset TextBuffer
-                        mov ofn.nMaxFile, MAX_FILE_NAME_SIZE
-                        mov TextBuffer[0], 0
-                        mov ofn.Flags, OFN_LONGNAMES or OFN_EXPLORER or OFN_HIDEREADONLY
-                        invoke GetSaveFileName, addr ofn
-                        .if eax==TRUE
-                                invoke szCatStr, addr TextBuffer, addr sExtension
-                                invoke CreateFile, addr TextBuffer, \
-                                        GENERIC_READ or GENERIC_WRITE , \
-                                        FILE_SHARE_READ or FILE_SHARE_WRITE, \
-                                        NULL, CREATE_NEW, FILE_ATTRIBUTE_ARCHIVE, NULL
-                                mov hFile, eax
-                                invoke lstrlen, addr ReportBuffer
-                                invoke _lwrite, hFile, addr ReportBuffer, eax
-                                invoke CloseHandle, hFile
+                        invoke MessageBox, 0, addr LargerBuffer, addr sCopyToClipboard, MB_YESNO
+                        .if eax==IDYES
+                                invoke OpenClipboard, 0
+                                invoke EmptyClipboard
+                                invoke GlobalAlloc, GMEM_MOVEABLE or GMEM_DDESHARE, 64
+                                mov ClipboardMemoryHandler, eax
+                                invoke GlobalLock, ClipboardMemoryHandler
+                                mov ClipboardMemoryAddress, eax
+                                invoke lstrcpy, ClipboardMemoryAddress, addr LargerBuffer
+                                invoke GlobalUnlock, ClipboardMemoryHandler
+                                invoke SetClipboardData, CF_TEXT, ClipboardMemoryHandler
+                                invoke CloseClipboard
                         .endif
 
                 ; realtime printing on/off
