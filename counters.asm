@@ -25,7 +25,7 @@ eB0 equ 100
 eBN equ 101
 eBW equ 102
 eBC equ 103
-eBF equ 104
+eBT equ 104
 
 ; checkbox
 eRealtimePrint equ 110
@@ -54,7 +54,7 @@ sB0 db "0", 0
 sBN db "N", 0
 sBW db "W", 0
 sBC db "C", 0
-sBF db "F", 0
+sBT db "T", 0
 
 ; checkbox
 sRealtimePrint db "Realtime print", 0
@@ -99,7 +99,7 @@ hB0 HWND ?
 hBN HWND ?
 hBW HWND ?
 hBC HWND ?
-hBF HWND ?
+hBT HWND ?
 
 ; checkbox
 hRealtimePrint HWND ?
@@ -254,10 +254,10 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         68, 2, 21, 21, hWnd, eBC, hInstance, NULL
                 mov hBC, eax
 
-                invoke CreateWindowEx, NULL, addr ButtonClassName, addr sBF, \
+                invoke CreateWindowEx, NULL, addr ButtonClassName, addr sBT, \
                         WS_CHILD or WS_VISIBLE or BS_DEFPUSHBUTTON, \
-                        90, 2, 21, 21, hWnd, eBF, hInstance, NULL
-                mov hBF, eax
+                        90, 2, 21, 21, hWnd, eBT, hInstance, NULL
+                mov hBT, eax
 
                 ; check box
                 invoke CreateWindowEx, NULL, addr ButtonClassName, addr sRealtimePrint, \
@@ -419,7 +419,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                         .endif
 
                 ; save report to file
-                .elseif ax==eBF
+                .elseif ax==eBT
                         mov ReportBuffer[0], 0
                         invoke GetSystemTime, addr syst
                         xor eax, eax
