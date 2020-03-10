@@ -3,11 +3,17 @@ Professionally, I work on a Software Development Toolkit for 3D-printing applica
 
 In 2006, I was in a similar position. I've been working on a 3D-engine with vectors, and triangles, and quaternions. But without any UI. Back then, I came up with the ersatz-GUI: an array of integer counters managed via WinAPI messaging. I named it *counters*.
 
-It's written in assembly which is good for visibility. You know that there are no hidden overheads, it doesn't eat up a lot of memory, and its performance doesn't depend on the compiler version. It's a separate process so it doesn't crash or hang when the main one does. And this is good for debugging when you want your program to stop every now and then. It's a separate window so Windows manages the message query instead of some third-party broker. And this is good for sustainability, it is 14 years old now and everything works as it was supposed to.
+![screenshot](screenshot.png)
+
+They form a 4x4 matrix which is convenient for 3D-related things. But you can use it for anything really.
+
+The buttons seem misaligned but there is logic in it. The buttons that has to do with the coutners are closer to the counters. And the buttons that expose the window handler are closer to the window handler. And yes, the number on top is the window handler.
+
+It's written in assembly which is good for visibility. You know that there are no hidden overheads, it doesn't eat up a lot of memory, and its performance doesn't depend on the compiler version. It's a separate process so it doesn't crash or hang when the main one does. And this is good for debugging when you want your program to stop every now and then. It's a separate window so Windows manages the message query instead of some third-party broker. And this is good for sustainability, it is 14 years old now and everything works as it was supposed to
 
 ## Messages
 
-It uses native Windows messaging for communication. In Windows, every window has a handler. It's like a phone number. We can call every window, *counters* included, and ask it to do something for us. With *counters*, the whole messaging interface is just 7 messages.
+It uses native Windows messaging for communication. In Windows, every window has a handler. It's like a phone number. We can call every window, *counters* included, and ask it to do something for us. With *counters*, the whole messaging interface is just 7 patterns.
 
 If you want to send an integer to a specific counter, send it with this message:
 
@@ -23,13 +29,11 @@ It's quite common to simply increment and decrement counters so there are specia
 
     SendMessage((HWND)655890, WM_USER, 'D', counter_idx);   // decrement a counter
 
-It is uncommon either to nullify a counter:
+It isn't uncommon to nullify a counter either:
 
     SendMessage((HWND)655890, WM_USER, '0', counter_idx);   // nullify a counter
-    
-Please note, that `0` here is a character, not a number. Sending 0 would just set 0-counter to `i`.
 
-The last two messages are about timing. Please note that this is not an accurate way to measure time. Nothing wrong with the timestamps but the messaging itself goes in quants. Generally, you shouldn't measure anything in milliseconds not to mention microseconds with this timer.
+The last two messages are about timing. Please note that this is not an accurate way to measure time. Nothing wrong with the timestamps underneath but the messaging itself goes in quants. The time between you send and recieve a message is in tens of milliseconds. Generally, you shouldn't try to measure anything in milliseconds not to mention microseconds with this timer.
 
 But if you want some rough measurement, for instance, when you run an algorithm that runs for ten seconds and you want to check that it still runs for ten seconds after you change something, it's fine. It goes like this:
 
