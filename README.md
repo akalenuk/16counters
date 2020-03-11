@@ -5,7 +5,11 @@ In 2006, I was in a similar position. I've been working on a 3D-engine with vect
 
 The counters form a 4x4 matrix which is convenient for 3D-related things. But you can use it for anything really.
 
-![usage example](example.png)
+![usage example](images/example1.png)
+
+![usage example](images/example2.png)
+
+![usage example](images/example3.png)
 
 The buttons seem misaligned but there is logic in it. The buttons that has to do with the coutners are closer to the counters. And the buttons that expose the window handler are closer to the window handler. And yes, the number on top is the window handler.
 
