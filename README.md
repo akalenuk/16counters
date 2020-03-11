@@ -3,13 +3,15 @@ Professionally, I work on a Software Development Toolkit for 3D-printing applica
 
 In 2006, I was in a similar position. I've been working on a 3D-engine with vectors, and triangles, and quaternions. But without any UI. Back then, I came up with the ersatz-GUI: an array of integer counters managed via WinAPI messaging. I named it *counters*.
 
-![screenshot](screenshot.png)
+The counters form a 4x4 matrix which is convenient for 3D-related things. But you can use it for anything really.
 
-They form a 4x4 matrix which is convenient for 3D-related things. But you can use it for anything really.
+![usage example](example.png)
 
 The buttons seem misaligned but there is logic in it. The buttons that has to do with the coutners are closer to the counters. And the buttons that expose the window handler are closer to the window handler. And yes, the number on top is the window handler.
 
-It's written in assembly which is good for visibility. You know that there are no hidden overheads, it doesn't eat up a lot of memory, and its performance doesn't depend on the compiler version. It's a separate process so it doesn't crash or hang when the main one does. And this is good for debugging when you want your program to stop every now and then. It's a separate window so Windows manages the message query instead of some third-party broker. And this is good for sustainability, it is 14 years old now and everything works as it was supposed to
+It's written in assembly which is good for visibility. You know that there are no hidden overheads, it doesn't eat up a lot of memory, and its performance doesn't depend on the compiler version. It's a separate process so it doesn't crash or hang when the main one does. And this is good for debugging when you want your program to stop every now and then. It's a separate window so Windows manages the message query instead of some third-party broker. And this is good for sustainability, it is 14 years old now and everything works as it was supposed to.
+
+And that's why I'm using it to this day.
 
 ## Messages
 
