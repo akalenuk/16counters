@@ -200,7 +200,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
 			invoke CreateWindowEx, WS_EX_CLIENTEDGE, addr EditClassName, addr sZero, \
 				WS_CHILD or WS_VISIBLE or ES_LEFT or ES_AUTOHSCROLL, \
-				x, y, 84, 18, hWnd, i, hInstance, NULL
+				x, y, 86, 20, hWnd, i, hInstance, NULL
 			mov esi, offset hCounterHandlers
 			mov ecx, i
 			mov [esi + ecx*4], eax
@@ -210,16 +210,16 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 		; labels
 		invoke CreateWindowEx, NULL, addr StaticClassName, addr s03, \
 			WS_CHILD or WS_VISIBLE, \
-			15, 32, 25, 20, hWnd, eL03, hInstance, NULL
+			15, 33, 25, 20, hWnd, eL03, hInstance, NULL
 		invoke CreateWindowEx, NULL, addr StaticClassName, addr s47, \
 			WS_CHILD or WS_VISIBLE, \
-			15, 54, 25, 20, hWnd, eL47, hInstance, NULL
+			15, 55, 25, 20, hWnd, eL47, hInstance, NULL
 		invoke CreateWindowEx, NULL, addr StaticClassName, addr s8B, \
 			WS_CHILD or WS_VISIBLE, \
-			15, 76, 25, 20, hWnd, eL8B, hInstance, NULL
+			15, 77, 25, 20, hWnd, eL8B, hInstance, NULL
 		invoke CreateWindowEx, NULL, addr StaticClassName, addr sCF, \
 			WS_CHILD or WS_VISIBLE, \
-			15, 98, 25, 20, hWnd, eLCF, hInstance, NULL
+			15, 99, 25, 20, hWnd, eLCF, hInstance, NULL
 
 		; buttons
 		invoke CreateWindowEx, NULL, addr ButtonClassName, addr sB0, \
