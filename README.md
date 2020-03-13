@@ -1,4 +1,4 @@
-# counters
+# 16 Counters
 Professionally, I work on a Software Development Toolkit for 3D-printing applications. It's a sack of algorithms and data structures. I get to play with curves, meshes, voxels, and images. But it has no GUI on its own and sometimes this makes things cumbersome.
 
 In 2006, I was in a similar position. I've been working on a 3D-engine with vectors, and triangles, and quaternions. But without any UI. Back then, I came up with the ersatz-GUI: an array of integer counters managed via WinAPI messaging. I named it *counters*.
@@ -60,7 +60,7 @@ Sending `T` starts the corresponding timer. Sending `S` stops it and displays el
 * `[T]` button copies all the counters to the clipboard.
 
 
-## When it helps
+## When it Helps
 
 I found it indispensable for tuning-up progress reporting. It's when your algorithm is crunching data and you want to know is it there yet at every given moment. You know, 0%, 5%, 10%, then 75%, and then 146%. This is something you would generally need a whole application with its dialogs, and slots, and events, and whatnot. Or you can use *counters*.
 
