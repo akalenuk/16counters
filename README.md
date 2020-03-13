@@ -11,7 +11,7 @@ The counters form a 4x4 matrix which is convenient for 3D-related things. But yo
 
 ![usage example](images/example3.png)
 
-The buttons seem misaligned but there is logic in it. The buttons that has to do with the coutners are closer to the counters. And the buttons that expose the window handler are closer to the window handler. And yes, the number on top is the window handler.
+The buttons seem misaligned but there is logic in it. The buttons that has to do with the counters are closer to the counters. And the buttons that expose the window handler are closer to the window handler. And yes, the number on top is the window handler.
 
 It's written in assembly which is good for visibility. You know that there are no hidden overheads, it doesn't eat up a lot of memory, and its performance doesn't depend on the compiler version. It's a separate process so it doesn't crash or hang when the main one does. And this is good for debugging when you want your program to stop every now and then. It's a separate window so Windows manages the message query instead of some third-party broker. And this is good for sustainability, it is 14 years old now and everything works as it was supposed to.
 
